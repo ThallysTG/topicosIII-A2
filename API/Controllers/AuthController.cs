@@ -29,70 +29,89 @@ namespace Api.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto model)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == model.Email))
+            try
             {
-                return BadRequest(new { Message = "O e-mail informado já está em uso." });
+                if (await _context.Users.AnyAsync(u => u.Email == model.Email))
+                {
+                    return BadRequest(new { Message = "O e-mail informado já está em uso." });
+                }
+
+                var passwordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
+
+                var user = new User
+                {
+                    Name = model.Name,
+                    Email = model.Email,
+                    PasswordHash = passwordHash,
+                    Role = model.Role,
+                    AreaInteresse = model.AreaInteresse,
+                    InepCode = model.InepCode
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                var token = _tokenService.GenerateToken(user);
+                SetTokenCookie(token);
+
+                return StatusCode(201, new
+                {
+                    Message = "Usuário registrado com sucesso.",
+                    UserId = user.Id,
+                    Role = user.Role.ToString()
+                });
             }
-
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
-
-            var user = new User
+            catch (Exception ex)
             {
-                Name = model.Name,
-                Email = model.Email,
-                PasswordHash = passwordHash,
-                Role = model.Role,
-                AreaInteresse = model.AreaInteresse,
-                InepCode = model.InepCode
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            var token = _tokenService.GenerateToken(user);
-            SetTokenCookie(token);
-
-            return StatusCode(201, new
-            {
-                Message = "Usuário registrado com sucesso.",
-                UserId = user.Id,
-                Role = user.Role.ToString()
-            });
+                return StatusCode(500, new { Message = "Falha interna ao registrar usuário.", Error = ex.Message });
+            }
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
-            var user = await _context.Users
-                .AsNoTracking()
-                .SingleOrDefaultAsync(u => u.Email == model.Email);
-
-            if (user == null)
+            try
             {
-                return Unauthorized(new { Message = "Usuário ou senha inválidos." });
+                var user = await _context.Users
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(u => u.Email == model.Email);
+
+                if (user == null)
+                {
+                    return Unauthorized(new { Message = "Usuário ou senha inválidos." });
+                }
+
+                if (!BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
+                {
+                    return Unauthorized(new { Message = "Usuário ou senha inválidos." });
+                }
+
+                var token = _tokenService.GenerateToken(user);
+                SetTokenCookie(token);
+
+                return Ok(new
+                {
+                    Message = "Login realizado com sucesso.",
+                });
             }
-
-            if (!BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
+            catch (Exception ex)
             {
-                return Unauthorized(new { Message = "Usuário ou senha inválidos." });
+                return StatusCode(500, new { Message = "Falha interna ao realizar login.", Error = ex.Message });
             }
-
-            var token = _tokenService.GenerateToken(user);
-            SetTokenCookie(token);
-
-            return Ok(new
-            {
-                Message = "Login realizado com sucesso.",
-                UserId = user.Id,
-                Role = user.Role.ToString()
-            });
         }
 
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            Response.Cookies.Delete("AuthToken");
-            return Ok(new { Message = "Logout realizado com sucesso." });
+            try
+            {
+                Response.Cookies.Delete("AuthToken");
+                return Ok(new { Message = "Logout realizado com sucesso." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Falha interna ao realizar logout.", Error = ex.Message });
+            }
         }
     }
 }
