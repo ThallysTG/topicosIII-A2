@@ -17,6 +17,8 @@ namespace Api.Controllers
         [HttpGet("mentors")]
         public async Task<IActionResult> GetMentors([FromQuery] string? area)
         {
+            var studentId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
             var query = _context.Users
                 .Where(u => u.Role == UserRole.Mentor)
                 .AsQueryable();
@@ -27,7 +29,15 @@ namespace Api.Controllers
             }
 
             var mentors = await query
-                .Select(u => new { u.Id, u.Name, u.AreaInteresse, u.Bio, u.InepCode })
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Name,
+                    u.AreaInteresse,
+                    u.Bio,
+                    u.InepCode,
+                    IsLinked = _context.Mentorships.Any(m => m.MentorId == u.Id && m.StudentId == studentId && (m.Status == MentorshipStatus.Pendente || m.Status == MentorshipStatus.Ativa))
+                })
                 .ToListAsync();
 
             return Ok(mentors);
