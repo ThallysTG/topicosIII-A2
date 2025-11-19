@@ -49,8 +49,8 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddScoped<TokenService>();
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+builder.Services.AddDbContext<ApplicationDbContext>(options => 
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
 builder.Services.AddAuthentication(options =>

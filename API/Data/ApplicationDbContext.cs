@@ -35,13 +35,15 @@ namespace Api.Data
                 .HasOne<User>()
                 .WithMany()
                 .HasForeignKey(ms => ms.StudentUserId)
-                .HasConstraintName("FK_MentoringSession_Student");
-            
+                .HasConstraintName("FK_MentoringSession_Student")
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<MentoringSession>()
                 .HasOne<User>()
                 .WithMany()
                 .HasForeignKey(ms => ms.MentorUserId)
-                .HasConstraintName("FK_MentoringSession_Mentor");
+                .HasConstraintName("FK_MentoringSession_Mentor")
+                .OnDelete(DeleteBehavior.Restrict); // evita cascade
 
             modelBuilder.Entity<RecommendationLog>()
                 .HasOne<User>()
