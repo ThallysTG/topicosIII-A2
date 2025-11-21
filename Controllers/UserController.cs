@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Admin")] 
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class UserController(ApplicationDbContext context) : ControllerBase
@@ -125,6 +125,24 @@ namespace Api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { Message = "Usuário excluído com sucesso." });
+        }
+
+        [HttpDelete("reset-database")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ResetDatabase()
+        {
+
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM StudyActivities");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM StudyTracks");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM MentoringSessions");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM Mentorships");
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM RecommendationLogs");
+
+            await _context.Database.ExecuteSqlRawAsync("DELETE FROM Users");
+
+            await _context.Database.ExecuteSqlRawAsync("DBCC CHECKIDENT ('Users', RESEED, 0)");
+
+            return Ok(new { Message = "Banco de dados resetado com sucesso (exceto dados do INEP)." });
         }
     }
 }

@@ -17,35 +17,42 @@ namespace Api.Controllers
         private readonly IReportService _reportService = reportService;
         private readonly ApplicationDbContext _context = context;
 
-        [HttpGet("progress/{studentId}")]
-        public async Task<IActionResult> GetProgress(int studentId)
+        [HttpGet("my-progress")]
+        [Authorize(Roles = "Aluno")]
+        public async Task<IActionResult> GetMyProgress()
         {
-            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id");
-            var currentUserId = int.Parse(idClaim?.Value ?? "0");
-            
-            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var studentId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-            if (currentUserRole == nameof(UserRole.Aluno) && currentUserId != studentId)
+            try
             {
-                return StatusCode(403, new { Message = "Você só pode visualizar seu próprio progresso." });
+                var progress = await _reportService.GetStudentProgressAsync(studentId, filterByMentorId: null);
+                return Ok(progress);
             }
-
-            if (currentUserRole == nameof(UserRole.Mentor))
+            catch (Exception ex)
             {
-                bool isLinked = await _context.Mentorships.AnyAsync(m => 
-                    m.MentorId == currentUserId && 
-                    m.StudentId == studentId && 
-                    m.Status == MentorshipStatus.Ativa);
+                return NotFound(new { Message = ex.Message });
+            }
+        }
 
-                if (!isLinked)
-                {
-                    return StatusCode(403, new { Message = "Este aluno não é seu mentorado ou a conexão não está ativa." });
-                }
+        [HttpGet("mentor/student/{studentId}")]
+        [Authorize(Roles = "Mentor")]
+        public async Task<IActionResult> GetStudentProgressForMentor(int studentId)
+        {
+            var mentorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            bool isLinked = await _context.Mentorships.AnyAsync(m => 
+                m.MentorId == mentorId && 
+                m.StudentId == studentId && 
+                m.Status == MentorshipStatus.Ativa);
+
+            if (!isLinked)
+            {
+                return StatusCode(403, new { Message = "Você não tem permissão para ver este aluno (sem vínculo ativo)." });
             }
 
             try
             {
-                var progress = await _reportService.GetStudentProgressAsync(studentId);
+                var progress = await _reportService.GetStudentProgressAsync(studentId, filterByMentorId: mentorId);
                 return Ok(progress);
             }
             catch (Exception ex)
