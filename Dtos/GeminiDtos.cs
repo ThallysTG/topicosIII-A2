@@ -20,6 +20,7 @@ namespace Api.Dtos
         public string PlanTitle { get; set; }
         public string Motivation { get; set; }
         public string SuggestedCourse { get; set; }
+        public string? SuggestedLocation { get; set; }
         public List<AiActivity> Activities { get; set; }
     }
 

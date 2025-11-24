@@ -50,7 +50,8 @@ namespace Api.Services
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"Erro na API do Gemini: {response.StatusCode}");
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Erro na API do Gemini ({response.StatusCode}): {errorContent}");
             }
 
             var responseString = await response.Content.ReadAsStringAsync();
@@ -66,28 +67,43 @@ namespace Api.Services
                 .Replace("```", "")
                 .Trim();
 
-            return JsonSerializer.Deserialize<StudyPlanResponse>(cleanedJson, new JsonSerializerOptions
+            try 
             {
-                PropertyNameCaseInsensitive = true
-            }) ?? new StudyPlanResponse();
+                return JsonSerializer.Deserialize<StudyPlanResponse>(cleanedJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new StudyPlanResponse();
+            }
+            catch
+            {
+                return new StudyPlanResponse 
+                { 
+                    PlanTitle = "Erro de Leitura", 
+                    Motivation = "A IA respondeu, mas não no formato JSON esperado. Tente novamente.",
+                    SuggestedCourse = "Administração" 
+                };
+            }
         }
 
         private string GeneratePrompt(User student, string specificGoal)
         {
             return $@"
                 Atue como um mentor acadêmico especialista chamado EduMentor.
-                Crie um plano de estudo personalizado para:
+                Analise o seguinte perfil e objetivo do aluno:
                 
                 Nome: {student.Name}
                 Área de Interesse: {student.AreaInteresse ?? "Geral"}
                 Bio: {student.Bio ?? "Não informado"}
-                Objetivo: {specificGoal}
+                Objetivo do Aluno: ""{specificGoal}""
+
+                Sua tarefa é gerar um plano de estudos e EXTRAIR informações chave do texto do aluno.
 
                 Responda ESTRITAMENTE com o seguinte formato JSON (sem markdown):
                 {{
                     ""planTitle"": ""Um título curto"",
                     ""motivation"": ""Texto motivacional curto"",
                     ""suggestedCourse"": ""Um nome de curso superior exato e comum no Brasil (Ex: 'Administração', 'Direito', 'Sistemas de Informação') relacionado ao objetivo."",
+                    ""suggestedLocation"": ""Analise o texto do 'Objetivo do Aluno'. Se ele mencionou alguma Cidade ou Estado onde quer estudar (Ex: 'em Palmas', 'no Tocantins', 'em SP'), extraia APENAS o nome do local e coloque aqui. Se ele não mencionou local, deixe null."",
                     ""activities"": [
                         {{
                             ""title"": ""Nome da atividade"",

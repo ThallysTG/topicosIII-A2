@@ -39,7 +39,10 @@ namespace Api.Controllers
                 var coursesFound = new List<InepCourse>();
                 if (!string.IsNullOrEmpty(aiResponse.SuggestedCourse))
                 {
-                    coursesFound = await _inepService.SearchCoursesAsync(aiResponse.SuggestedCourse);
+                    coursesFound = await _inepService.SearchCoursesAsync(
+                        aiResponse.SuggestedCourse, 
+                        aiResponse.SuggestedLocation
+                    );
                 }
 
                 var newTrack = new StudyTrack
@@ -92,6 +95,7 @@ namespace Api.Controllers
                         PlanTitle = newTrack.Title,
                         Motivation = newTrack.Description,
                         SuggestedCourse = aiResponse.SuggestedCourse,
+                        SuggestedLocation = aiResponse.SuggestedLocation,
                         Activities = responseActivities
                     }, 
                     InepOptions = coursesFound 
