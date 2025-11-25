@@ -46,5 +46,25 @@ namespace Api.Controllers
 
             return Ok(tracks);
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTrack(int id)
+        {
+            var userIdParam = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("id")?.Value;
+            if (!int.TryParse(userIdParam, out int userId)) return Unauthorized();
+
+            var track = await _context.StudyTracks.FindAsync(id);
+
+            if (track == null) 
+                return NotFound(new { Message = "Trilha não encontrada." });
+
+            if (track.StudentUserId != userId) 
+                return StatusCode(403, new { Message = "Você não tem permissão para excluir esta trilha." });
+
+            _context.StudyTracks.Remove(track);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "Trilha excluída com sucesso." });
+        }
     }
 }

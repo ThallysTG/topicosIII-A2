@@ -6,10 +6,13 @@ namespace Api.Dtos
         public string StudentName { get; set; }
         public int TotalActivities { get; set; }
         public int CompletedActivities { get; set; }
-        public double GlobalCompletionRate { get; set; } 
+        public double GlobalCompletionRate { get; set; }
         public int TotalMentoringSessions { get; set; }
         public int CompletedMentoringSessions { get; set; }
-        public List<TrackProgressDto> Tracks { get; set; } = new();
+        public double AverageDaysBetweenTasks { get; set; }
+        public int MaxGapInDays { get; set; }
+        public DateTime? LastActivityDate { get; set; }
+        public List<TrackProgressDto> Tracks { get; set; } = [];
     }
 
     public class TrackProgressDto
@@ -20,5 +23,6 @@ namespace Api.Dtos
         public int CompletedActivities { get; set; }
         public double CompletionRate { get; set; }
         public string Status { get; set; }
+
     }
 }
