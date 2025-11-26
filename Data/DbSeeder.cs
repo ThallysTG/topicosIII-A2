@@ -14,7 +14,7 @@ namespace Api.Data
             var users = new List<User>
             {
                 new() { 
-                    Name = "Administrador", 
+                    Name = "Usuário Administrador", 
                     Email = "admin@edumentor.com", 
                     PasswordHash = passwordHash, 
                     Role = UserRole.Admin,
@@ -22,7 +22,7 @@ namespace Api.Data
                     Bio = "Gestor do Sistema"
                 },
                 new() { 
-                    Name = "Prof. Xavier", 
+                    Name = "Thallys", 
                     Email = "mentor@edumentor.com", 
                     PasswordHash = passwordHash, 
                     Role = UserRole.Mentor,
@@ -30,7 +30,7 @@ namespace Api.Data
                     Bio = "Especialista em IA e Desenvolvimento de Software."
                 },
                 new() { 
-                    Name = "Aluno Teste", 
+                    Name = "Luiz", 
                     Email = "aluno@edumentor.com", 
                     PasswordHash = passwordHash, 
                     Role = UserRole.Aluno,

@@ -29,16 +29,16 @@ namespace Api.Services
 
             var requestBody = new GeminiRequest
             {
-                Contents = new List<Content>
-                {
+                Contents =
+                [
                     new Content
                     {
-                        Parts = new List<Part>
-                        {
+                        Parts =
+                        [
                             new Part { Text = prompt }
-                        }
+                        ]
                     }
-                }
+                ]
             };
 
             var jsonContent = new StringContent(
