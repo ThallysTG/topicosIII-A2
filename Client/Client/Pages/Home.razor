@@ -1,0 +1,249 @@
+﻿@page "/"
+@using EduMentorClient.Services
+@using System.Net.Http.Headers 
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject UserState UserState
+@inject NavigationManager Nav
+
+<PageTitle>EduMentor - Nova Trilha</PageTitle>
+
+<MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true" Color="Color.Primary">
+    O que queres aprender hoje?
+</MudText>
+<MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mb-8">
+    A IA cria o teu plano de estudos e o INEP diz onde estudar.
+</MudText>
+
+<MudPaper Elevation="3" Class="pa-8 mb-8 mx-auto" MaxWidth="MaxWidth.Medium">
+    <MudTextField @bind-Value="userGoal" 
+                  Label="Descreve o teu objetivo (Ex: Quero ser programador C#)" 
+                  Variant="Variant.Outlined" 
+                  Lines="3" 
+                  Adornment="Adornment.End" 
+                  AdornmentIcon="@Icons.Material.Filled.AutoAwesome" />
+    
+    <div class="d-flex justify-center mt-4">
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Size="Size.Large" 
+                   OnClick="GenerateTrack" 
+                   Disabled="@loading"
+                   StartIcon="@Icons.Material.Filled.Search">
+            @if (loading) { <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/> <span class="ms-2">A Gerar Inteligência...</span> }
+            else { <span>Gerar Trilha de Estudos</span> }
+        </MudButton>
+    </div>
+</MudPaper>
+
+@if (result != null)
+{
+    <MudDivider Class="my-8" />
+    
+    <MudGrid>
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="4" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Color="Color.Secondary">@result.AiPlan.PlanTitle</MudText>
+                        <MudChip T="string" Color="Color.Info" Icon="@Icons.Material.Filled.School" Class="mt-2">
+                            Curso Sugerido: @result.AiPlan.SuggestedCourse
+                        </MudChip>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Style="font-style: italic" Class="mb-4">"@result.AiPlan.Motivation"</MudText>
+                    
+                    <MudText Typo="Typo.h6">Trilha Sugerida:</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var activity in result.AiPlan.Activities)
+                        {
+                            <MudListItem>
+                                <div class="d-flex align-center">
+                                    <MudCheckBox T="bool" 
+                                                 Value="@activity.IsCompleted" 
+                                                 ValueChanged="@((e) => ToggleActivityStatus(activity))"
+                                                 Color="Color.Success" 
+                                                 Dense="true"/>
+                                    
+                                    <div class="ml-3">
+                                        <MudText><b>@activity.Title</b></MudText>
+                                        <MudText Typo="Typo.body2">@activity.Description</MudText>
+                                        @if(!string.IsNullOrEmpty(activity.Link))
+                                        {
+                                            <MudLink Href="@activity.Link" Target="_blank" Color="Color.Primary" Underline="Underline.Hover">Acessar Recurso</MudLink>
+                                        }
+                                    </div>
+                                </div>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="4" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5">Onde Estudar?</MudText>
+                        <MudText Typo="Typo.caption">Baseado em dados do INEP 2024</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (result.InepOptions == null || !result.InepOptions.Any())
+                    {
+                        <MudAlert Severity="Severity.Info">Nenhuma faculdade encontrada para o curso sugerido.</MudAlert>
+                    }
+                    else
+                    {
+                        <MudTable Items="@result.InepOptions" Dense="true" Hover="true" FixedHeader="true" Height="400px">
+                            <HeaderContent>
+                                <MudTh>Instituição</MudTh>
+                                <MudTh>Local</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="IES"><b>@context.InstitutionName</b></MudTd>
+                                <MudTd DataLabel="Local">@context.City - @context.State</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private string userGoal = "";
+    private bool loading = false;
+    private ApiResponse? result;
+
+    protected override void OnInitialized()
+    {
+        // Se não estiver logado, redireciona
+        if (!UserState.IsLoggedIn)
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
+
+    // --- Classes DTO (Modelos de Dados) ---
+    public class ApiResponse
+    {
+        public AiPlan AiPlan { get; set; }
+        public List<InepCourse> InepOptions { get; set; }
+    }
+
+    public class AiPlan
+    {
+        public string PlanTitle { get; set; }
+        public string Motivation { get; set; }
+        public string SuggestedCourse { get; set; }
+        public List<Activity> Activities { get; set; }
+    }
+
+    public class Activity
+    {
+        public int Id { get; set; } // ID vindo do banco de dados
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string Link { get; set; }
+        public bool IsCompleted { get; set; } // Status visual
+    }
+
+    public class InepCourse
+    {
+        public string InstitutionName { get; set; }
+        public string CourseName { get; set; }
+        public string City { get; set; }
+        public string State { get; set; }
+    }
+
+    // --- 1. Gerar a Trilha (POST) ---
+    private async Task GenerateTrack()
+    {
+        if (string.IsNullOrWhiteSpace(userGoal))
+        {
+            Snackbar.Add("Por favor, digita um objetivo!", Severity.Warning);
+            return;
+        }
+
+        loading = true;
+        result = null;
+
+        try
+        {
+            var payload = new { StudentId = UserState.UserId, SpecificGoal = userGoal };
+            
+            var request = new HttpRequestMessage(HttpMethod.Post, "api/recommendation/generate");
+            request.Content = JsonContent.Create(payload);
+            
+            // Adiciona o Token no cabeçalho
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                result = await response.Content.ReadFromJsonAsync<ApiResponse>();
+                Snackbar.Add("Trilha gerada e salva com sucesso!", Severity.Success);
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Snackbar.Add("Sessão expirada. Faz login novamente.", Severity.Error);
+                Nav.NavigateTo("/login");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Erro na API: {response.StatusCode}", Severity.Error);
+                Console.WriteLine(error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro de conexão: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    // --- 2. Salvar o Progresso (PATCH) ---
+    private async Task ToggleActivityStatus(Activity activity)
+    {
+        // 1. Atualização Optimista (muda na tela instantaneamente)
+        activity.IsCompleted = !activity.IsCompleted;
+        
+        try 
+        {
+            // 2 = Concluída, 0 = Pendente
+            var newStatus = activity.IsCompleted ? 2 : 0; 
+            
+            var request = new HttpRequestMessage(HttpMethod.Patch, $"api/activity/{activity.Id}/status");
+            request.Content = JsonContent.Create(newStatus);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                // Se deu erro, reverte a mudança visual
+                activity.IsCompleted = !activity.IsCompleted;
+                Snackbar.Add("Erro ao salvar progresso.", Severity.Error);
+            }
+            else 
+            {
+                 // Sucesso silencioso (ou descomenta abaixo para avisar)
+                 // Snackbar.Add("Progresso salvo!", Severity.Success);
+            }
+        }
+        catch
+        {
+            activity.IsCompleted = !activity.IsCompleted;
+            Snackbar.Add("Erro de conexão.", Severity.Error);
+        }
+    }
+}

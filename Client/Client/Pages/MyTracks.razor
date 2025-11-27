@@ -1,0 +1,170 @@
+@page "/my-tracks"
+@using EduMentorClient.Services
+@using System.Net.Http.Headers
+@inject HttpClient Http
+@inject UserState UserState
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<PageTitle>Minhas Trilhas</PageTitle>
+
+<MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true" Color="Color.Primary">
+    Minhas Trilhas de Estudo
+</MudText>
+
+@if (loading)
+{
+    <div class="d-flex justify-center mt-8">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </div>
+}
+else if (tracks == null || !tracks.Any())
+{
+    <MudAlert Severity="Severity.Info" Class="mt-4">
+        Você ainda não gerou nenhuma trilha. <MudLink Href="/">Clique aqui para começar.</MudLink>
+    </MudAlert>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+        <MudExpansionPanels MultiExpansion="true">
+            @foreach (var track in tracks)
+            {
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div class="d-flex justify-space-between align-center w-100">
+                            <div>
+                                <MudText Typo="Typo.h6">@track.Title</MudText>
+                                <MudText Typo="Typo.caption">
+                                    @track.CompletedActivities de @track.TotalActivities atividades concluídas
+                                </MudText>
+                            </div>
+                            <div class="mr-4">
+                                <MudProgressCircular Value="@GetProgress(track)" 
+                                                     Color="Color.Success" 
+                                                     Size="Size.Small" 
+                                                     Class="ml-4" />
+                            </div>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudText Class="mb-4" Typo="Typo.body2">@track.Description</MudText>
+                        <MudDivider />
+                        
+                        <MudList T="string" Dense="true">
+                            @foreach (var activity in track.Activities)
+                            {
+                                <MudListItem>
+                                    <div class="d-flex align-center">
+                                        <MudCheckBox T="bool" 
+                                                     Value="@activity.IsCompleted" 
+                                                     ValueChanged="@((e) => ToggleStatus(track, activity))"
+                                                     Color="Color.Success" />
+                                        <div class="ml-3">
+                                            <MudText><b>@activity.Title</b></MudText>
+                                            <MudText Typo="Typo.caption">@activity.Description</MudText>
+                                            @if (!string.IsNullOrEmpty(activity.Link))
+                                            {
+                                                <br/>
+                                                <MudLink Href="@activity.Link" Target="_blank" Typo="Typo.caption">Acessar Material</MudLink>
+                                            }
+                                        </div>
+                                    </div>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </ChildContent>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    </MudContainer>
+}
+
+@code {
+    private bool loading = true;
+    private List<TrackDto> tracks = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!UserState.IsLoggedIn) { Nav.NavigateTo("/login"); return; }
+        await LoadTracks();
+    }
+
+    private async Task LoadTracks()
+    {
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "api/studytrack");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+            
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                tracks = await response.Content.ReadFromJsonAsync<List<TrackDto>>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao carregar trilhas.", Severity.Error);
+        }
+        finally { loading = false; }
+    }
+
+    private double GetProgress(TrackDto t) => 
+        t.TotalActivities > 0 ? ((double)t.CompletedActivities / t.TotalActivities) * 100 : 0;
+
+    private async Task ToggleStatus(TrackDto track, ActivityDto activity)
+    {
+        // Atualização Visual Otimista
+        activity.IsCompleted = !activity.IsCompleted;
+        
+        // Recalcula contador visualmente
+        if(activity.IsCompleted) track.CompletedActivities++;
+        else track.CompletedActivities--;
+
+        try 
+        {
+            // 2 = Concluida, 0 = Pendente
+            var newStatus = activity.IsCompleted ? 2 : 0; 
+            
+            var request = new HttpRequestMessage(HttpMethod.Patch, $"api/activity/{activity.Id}/status");
+            // IMPORTANTE: Enviar como JSON simples
+            request.Content = JsonContent.Create(newStatus);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                // Reverte se deu erro
+                activity.IsCompleted = !activity.IsCompleted;
+                if(activity.IsCompleted) track.CompletedActivities++; else track.CompletedActivities--;
+                Snackbar.Add("Erro ao salvar. Tente novamente.", Severity.Error);
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Erro de conexão.", Severity.Error);
+        }
+    }
+
+    // DTOs locais
+    public class TrackDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public int TotalActivities { get; set; }
+        public int CompletedActivities { get; set; }
+        public List<ActivityDto> Activities { get; set; }
+    }
+
+    public class ActivityDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string Link { get; set; }
+        public bool IsCompleted { get; set; }
+    }
+}
