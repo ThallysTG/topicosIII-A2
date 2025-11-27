@@ -107,5 +107,23 @@ namespace Api.Controllers
             await _context.SaveChangesAsync();
             return Ok($"Status atualizado para {status}");
         }
+
+        [HttpGet("my-students")]
+        [Authorize(Roles = "Mentor")]
+        public async Task<IActionResult> GetMyActiveStudents()
+        {
+            var mentorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            var students = await _context.Mentorships
+                .Where(m => m.MentorId == mentorId && m.Status == MentorshipStatus.Ativa) // Só ativos
+                .Select(m => new
+                {
+                    m.Student.Id,
+                    m.Student.Name
+                })
+                .ToListAsync();
+
+            return Ok(students);
+        }
     }
 }
