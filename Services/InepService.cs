@@ -19,7 +19,7 @@ namespace Api.Services
     {
         private readonly ApplicationDbContext _context = context;
 
-        private readonly Dictionary<string, string> _estados = new(StringComparer.OrdinalIgnoreCase)
+        private readonly Dictionary<string, string> _estadosPorExtenso = new(StringComparer.OrdinalIgnoreCase)
         {
             {"Acre", "AC"}, {"Alagoas", "AL"}, {"Amapá", "AP"}, {"Amazonas", "AM"}, {"Bahia", "BA"},
             {"Ceará", "CE"}, {"Distrito Federal", "DF"}, {"Espírito Santo", "ES"}, {"Goiás", "GO"},
@@ -28,6 +28,12 @@ namespace Api.Services
             {"Rio de Janeiro", "RJ"}, {"Rio Grande do Norte", "RN"}, {"Rio Grande do Sul", "RS"},
             {"Rondônia", "RO"}, {"Roraima", "RR"}, {"Santa Catarina", "SC"}, {"São Paulo", "SP"},
             {"Sergipe", "SE"}, {"Tocantins", "TO"}
+        };
+
+        private readonly HashSet<string> _siglasValidas = new()
+        {
+            "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA",
+            "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
         };
 
         public async Task ImportCoursesFromCsvAsync(Stream fileStream)
@@ -77,7 +83,7 @@ namespace Api.Services
 
         public async Task<List<InepCourse>> SearchCoursesAsync(string term, string? locationFilter = null, int page = 1, int pageSize = 50)
         {
-            if (string.IsNullOrWhiteSpace(term)) return [];
+            if (string.IsNullOrWhiteSpace(term)) return new List<InepCourse>();
 
             var query = _context.InepCourses
                 .AsNoTracking()
@@ -86,42 +92,45 @@ namespace Api.Services
             if (!string.IsNullOrWhiteSpace(locationFilter))
             {
                 var cleanFilter = locationFilter.Trim();
+                string? detectedState = null;
+                string citySearchPart = cleanFilter;
 
-                if (_estados.TryGetValue(cleanFilter, out string? uf))
+                var parts = cleanFilter.Split(new[] { ' ', ',', '-' }, StringSplitOptions.RemoveEmptyEntries);
+                var lastPart = parts.LastOrDefault()?.ToUpper();
+
+                if (lastPart != null && lastPart.Length == 2 && _siglasValidas.Contains(lastPart))
                 {
-                    query = query.Where(c => c.State == uf);
+                    detectedState = lastPart;
+                    citySearchPart = cleanFilter.Replace(lastPart, "", StringComparison.OrdinalIgnoreCase)
+                                                .Trim(new[] { ' ', ',', '-' });
+                }
+
+                if (detectedState == null)
+                {
+                    foreach (var estado in _estadosPorExtenso)
+                    {
+                        if (cleanFilter.Contains(estado.Key, StringComparison.OrdinalIgnoreCase))
+                        {
+                            detectedState = estado.Value;
+                            citySearchPart = cleanFilter.Replace(estado.Key, "", StringComparison.OrdinalIgnoreCase)
+                                                        .Trim(new[] { ' ', ',', '-' });
+                            break;
+                        }
+                    }
+                }
+
+                if (detectedState != null)
+                {
+                    query = query.Where(c => c.State == detectedState);
+
+                    if (!string.IsNullOrWhiteSpace(citySearchPart))
+                    {
+                        query = query.Where(c => c.City.Contains(citySearchPart));
+                    }
                 }
                 else
                 {
-                    var parts = cleanFilter.Split(new[] { ',', '-' }, StringSplitOptions.RemoveEmptyEntries)
-                                           .Select(p => p.Trim())
-                                           .ToArray();
-
-                    if (parts.Length > 1)
-                    {
-                        var cityPart = parts[0];
-                        var statePart = parts.Last();
-
-                        if (statePart.Length == 2)
-                        {
-                            query = query.Where(c => c.City.Contains(cityPart) && c.State == statePart.ToUpper());
-                        }
-                        else
-                        {
-                            query = query.Where(c => c.City.Contains(cityPart));
-                        }
-                    }
-                    else
-                    {
-                        if (cleanFilter.Length == 2)
-                        {
-                            query = query.Where(c => c.State == cleanFilter.ToUpper());
-                        }
-                        else
-                        {
-                            query = query.Where(c => c.City.Contains(cleanFilter));
-                        }
-                    }
+                    query = query.Where(c => c.City.Contains(cleanFilter) || c.State.Contains(cleanFilter));
                 }
             }
 
