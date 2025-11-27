@@ -1,0 +1,187 @@
+@page "/register"
+@layout Client.Shared.AuthLayout
+@using EduMentorClient.Services
+@using System.ComponentModel.DataAnnotations
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<PageTitle>Cadastro - EduMentor</PageTitle>
+
+<div class="min-h-screen bg-[#F5F7FA] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
+        <div class="flex justify-center mb-4">
+            <div class="h-16 w-16 bg-[#0056D2] rounded-full flex items-center justify-center shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                </svg>
+            </div>
+        </div>
+        <h2 class="text-3xl font-extrabold text-[#0056D2] tracking-tight">
+            Crie a sua conta
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+            Comece a sua jornada no <b>EduMentor AI</b>
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow-2xl shadow-blue-100 sm:rounded-2xl sm:px-10 border border-gray-100">
+            <div class="space-y-5">
+                
+                <div>
+                    <label for="name" class="block text-sm font-bold text-gray-700">Nome Completo</label>
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                        <input id="name" type="text" @bind-value="model.Name"
+                               class="focus:ring-[#0056D2] focus:border-[#0056D2] block w-full sm:text-sm border-gray-300 rounded-lg p-3 border outline-none transition" 
+                               placeholder="João da Silva" />
+                    </div>
+                </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-bold text-gray-700">E-mail</label>
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                        <input id="email" type="email" @bind-value="model.Email"
+                               class="focus:ring-[#0056D2] focus:border-[#0056D2] block w-full sm:text-sm border-gray-300 rounded-lg p-3 border outline-none transition" 
+                               placeholder="seu@email.com" />
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-bold text-gray-700">Senha</label>
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                        <input id="password" type="@inputType" @bind-value="model.Password"
+                               class="focus:ring-[#0056D2] focus:border-[#0056D2] block w-full pr-10 sm:text-sm border-gray-300 rounded-lg p-3 border outline-none transition" 
+                               placeholder="Mínimo 6 caracteres" />
+                        
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" @onclick="TogglePasswordVisibility">
+                            <svg class="h-5 w-5 text-gray-400 hover:text-[#0056D2]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                @if (isPasswordVisible) {
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                } else {
+                                    <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
+                                    <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.742L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.694-.097 2.454-.278z" />
+                                }
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="role" class="block text-sm font-bold text-gray-700">Eu sou...</label>
+                    <select id="role" @bind="roleOption"
+                            class="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-[#0056D2] focus:border-[#0056D2] sm:text-sm rounded-lg border">
+                        <option value="0">Aluno (Quero aprender)</option>
+                        <option value="1">Mentor (Quero ensinar)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="area" class="block text-sm font-bold text-gray-700">Área de Interesse</label>
+                    <input id="area" type="text" @bind-value="model.AreaInteresse"
+                           class="mt-1 focus:ring-[#0056D2] focus:border-[#0056D2] block w-full sm:text-sm border-gray-300 rounded-lg p-3 border outline-none transition" 
+                           placeholder="Ex: Tecnologia, Direito, Saúde..." />
+                </div>
+
+                <div class="pt-2">
+                    <button type="button" @onclick="RegisterUser" disabled="@loading"
+                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#0056D2] hover:bg-[#00419E] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0056D2] disabled:opacity-50 disabled:cursor-not-allowed transition duration-200">
+                        @if (loading)
+                        {
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Criando conta...</span>
+                        }
+                        else
+                        {
+                            <span>Registar</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-600">
+                    Já tens conta?
+                    <a href="/login" class="font-medium text-[#0056D2] hover:text-[#00419E] hover:underline transition">
+                        Entrar agora
+                    </a>
+                </p>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center text-xs text-gray-400">
+            &copy; 2025 EduMentor AI. Todos os direitos reservados.
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool loading = false;
+    private RegisterDto model = new();
+    private int roleOption = 0; 
+    bool isPasswordVisible = false;
+    string inputType = "password";
+
+    void TogglePasswordVisibility()
+    {
+        isPasswordVisible = !isPasswordVisible;
+        inputType = isPasswordVisible ? "text" : "password";
+    }
+
+    private async Task RegisterUser()
+    {
+        if (string.IsNullOrWhiteSpace(model.Name) || 
+            string.IsNullOrWhiteSpace(model.Email) || 
+            string.IsNullOrWhiteSpace(model.Password) ||
+            string.IsNullOrWhiteSpace(model.AreaInteresse))
+        {
+            Snackbar.Add("Por favor, preenche todos os campos.", Severity.Warning);
+            return;
+        }
+
+        loading = true;
+        try
+        {
+            model.Role = roleOption;
+
+            var response = await Http.PostAsJsonAsync("api/auth/register", model);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Conta criada com sucesso! Faz login.", Severity.Success);
+                Nav.NavigateTo("/login");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                if (error.Contains("already exists") || error.Contains("já está em uso"))
+                    Snackbar.Add("Este e-mail já está a ser utilizado.", Severity.Error);
+                else
+                    Snackbar.Add("Erro ao criar conta. Verifica os dados.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro de conexão.", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    public class RegisterDto
+    {
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public int Role { get; set; }
+        public string AreaInteresse { get; set; } = "";
+        public string InepCode { get; set; } = "";
+    }
+}

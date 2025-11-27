@@ -1,0 +1,231 @@
+@page "/progress"
+@using EduMentorClient.Services
+@using System.Net.Http.Headers
+@inject HttpClient Http
+@inject UserState UserState
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<PageTitle>Meu Progresso - EduMentor</PageTitle>
+
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    
+    <div class="text-center mb-10">
+        <h1 class="text-3xl font-extrabold text-[#0056D2] tracking-tight sm:text-4xl">
+            Painel de Progresso
+        </h1>
+        <p class="mt-3 max-w-2xl mx-auto text-xl text-gray-500">
+            Acompanha a tua evolução nas trilhas e mentorias.
+        </p>
+    </div>
+
+    @if (loading)
+    {
+        <div class="flex justify-center mt-12">
+            <svg class="animate-spin h-10 w-10 text-[#0056D2]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+    }
+    else if (report == null)
+    {
+        <div class="bg-blue-50 border-l-4 border-[#0056D2] p-4 rounded-r-md max-w-3xl mx-auto">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        Não foi possível carregar os dados. Tente novamente mais tarde.
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100 mb-8">
+            <div class="px-6 py-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h3 class="text-lg leading-6 font-bold text-gray-900">Visão Geral</h3>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
+                    <svg class="mr-1.5 h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    @report.GlobalCompletionRate.ToString("F0")% Concluído
+                </span>
+            </div>
+            
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Atividades de Estudo</h4>
+                    <p class="text-3xl font-extrabold text-gray-900">
+                        @report.CompletedActivities <span class="text-lg text-gray-400 font-medium">/ @report.TotalActivities</span>
+                    </p>
+                    
+                    <div class="w-full bg-gray-200 rounded-full h-4 mt-4 overflow-hidden">
+                        <div class="bg-[#0056D2] h-4 rounded-full transition-all duration-1000 ease-out flex items-center justify-end pr-2" 
+                             style="width: @report.GlobalCompletionRate.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)%">
+                             <div class="w-full h-full opacity-20 bg-[length:10px_10px] bg-[linear-gradient(45deg,rgba(255,255,255,.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,.15)_50%,rgba(255,255,255,.15)_75%,transparent_75%,transparent)] animate-[progress-stripes_1s_linear_infinite]"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Sessões de Mentoria</h4>
+                    <p class="text-3xl font-extrabold text-gray-900">
+                        @report.CompletedMentoringSessions <span class="text-lg text-gray-400 font-medium">/ @report.TotalMentoringSessions</span>
+                    </p>
+                    
+                    @{
+                        var mentorRate = report.TotalMentoringSessions > 0 ? (double)report.CompletedMentoringSessions/report.TotalMentoringSessions*100 : 0;
+                    }
+                    <div class="w-full bg-gray-200 rounded-full h-4 mt-4 overflow-hidden">
+                        <div class="bg-purple-600 h-4 rounded-full transition-all duration-1000 ease-out" 
+                             style="width: @mentorRate.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            Detalhes por Trilha
+        </h3>
+
+        @if (report.Tracks == null || !report.Tracks.Any())
+        {
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-md">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            Ainda não tens trilhas. <a href="/" class="font-bold underline">Cria uma agora!</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @foreach (var track in report.Tracks)
+                {
+                    <div class="bg-white rounded-lg shadow border border-gray-200 hover:shadow-md transition duration-200 flex flex-col">
+                        <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-start">
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-900 line-clamp-1">@track.Title</h4>
+                                <span class="inline-flex mt-1 items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    @track.Status
+                                </span>
+                            </div>
+                            <a href="/my-tracks" class="text-gray-400 hover:text-[#0056D2] transition">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </a>
+                        </div>
+                        
+                        <div class="p-5 flex-grow">
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="text-sm font-medium text-gray-500">Progresso</span>
+                                <span class="text-lg font-bold text-gray-900">@track.CompletionRate.ToString("F0")%</span>
+                            </div>
+                            
+                            @{
+                                string barColor = "bg-yellow-500";
+                                if (track.CompletionRate >= 100) barColor = "bg-green-500";
+                                else if (track.CompletionRate >= 50) barColor = "bg-blue-500";
+                            }
+
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                                <div class="@barColor h-2.5 rounded-full transition-all duration-700" 
+                                     style="width: @track.CompletionRate.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                            </div>
+                            
+                            <p class="text-sm text-gray-600">
+                                <b>@track.CompletedActivities</b> de <b>@track.TotalActivities</b> atividades completadas
+                            </p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private bool loading = true;
+    private StudentProgressDto? report;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!UserState.IsLoggedIn)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        loading = true;
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, $"api/reports/progress/{UserState.UserId}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                report = await response.Content.ReadFromJsonAsync<StudentProgressDto>();
+            }
+            else
+            {
+                Snackbar.Add($"Erro ao carregar dados.", Severity.Error);
+            }
+        }
+        catch
+        {
+            Snackbar.Add($"Erro de conexão.", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+    
+    public class StudentProgressDto
+    {
+        public int StudentId { get; set; }
+        public string StudentName { get; set; }
+        public int TotalActivities { get; set; }
+        public int CompletedActivities { get; set; }
+        public double GlobalCompletionRate { get; set; }
+        public int TotalMentoringSessions { get; set; }
+        public int CompletedMentoringSessions { get; set; }
+        public List<TrackProgressDto> Tracks { get; set; }
+    }
+
+    public class TrackProgressDto
+    {
+        public int TrackId { get; set; }
+        public string Title { get; set; }
+        public int TotalActivities { get; set; }
+        public int CompletedActivities { get; set; }
+        public double CompletionRate { get; set; }
+        public string Status { get; set; }
+    }
+}
