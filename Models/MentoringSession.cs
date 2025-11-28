@@ -18,6 +18,7 @@ namespace Api.Models
         public DateTime ScheduledAt { get; set; }
         public SessionStatus SessionStatus { get; set; }
         public string? NotesMentor { get; set; }
+        
         [ForeignKey("StudentUserId")]
         [JsonIgnore]
         public User? StudentUser { get; set; }

@@ -7,7 +7,7 @@ namespace Api.Services
 {
     public interface IReportService
     {
-        Task<StudentProgressDto> GetStudentProgressAsync(int studentId);
+        Task<StudentProgressDto> GetStudentProgressAsync(int studentId, int? filterByMentorId = null);
     }
 
     public class ReportService : IReportService
@@ -19,34 +19,47 @@ namespace Api.Services
             _context = context;
         }
 
-        public async Task<StudentProgressDto> GetStudentProgressAsync(int studentId)
+        public async Task<StudentProgressDto> GetStudentProgressAsync(int studentId, int? filterByMentorId = null)
         {
             var student = await _context.Users.FindAsync(studentId) ?? throw new Exception("Aluno não encontrado");
-            var tracks = await _context.StudyTracks
+            var tracksQuery = _context.StudyTracks
                 .Include(t => t.StudyActivities)
-                .Where(t => t.StudentUserId == studentId)
-                .ToListAsync();
+                .Where(t => t.StudentUserId == studentId);
 
-            var sessions = await _context.MentoringSessions
-                .Where(s => s.StudentUserId == studentId)
-                .ToListAsync();
+            if (filterByMentorId.HasValue)
+            {
+                tracksQuery = tracksQuery.Where(t => t.Source == RecommendationSource.Mentor);
+            }
+
+            var tracks = await tracksQuery.ToListAsync();
+
+            var sessionsQuery = _context.MentoringSessions
+                .Where(s => s.StudentUserId == studentId);
+
+            if (filterByMentorId.HasValue)
+            {
+                sessionsQuery = sessionsQuery.Where(s => s.MentorUserId == filterByMentorId.Value);
+            }
+
+            var sessions = await sessionsQuery.ToListAsync();
 
             var allActivities = tracks.SelectMany(t => t.StudyActivities).ToList();
             int totalActs = allActivities.Count;
             int completedActs = allActivities.Count(a => a.ActivityStatus == ActivityStatus.Concluida);
 
-            var report = new StudentProgressDto
+            return new StudentProgressDto
             {
                 StudentId = student.Id,
                 StudentName = student.Name,
                 TotalActivities = totalActs,
                 CompletedActivities = completedActs,
                 GlobalCompletionRate = totalActs > 0 ? (double)completedActs / totalActs * 100 : 0,
-                
+
                 TotalMentoringSessions = sessions.Count,
                 CompletedMentoringSessions = sessions.Count(s => s.SessionStatus == SessionStatus.Concluida),
-                
-                Tracks = tracks.Select(t => {
+
+                Tracks = [.. tracks.Select(t =>
+                {
                     int tTotal = t.StudyActivities.Count;
                     int tCompleted = t.StudyActivities.Count(a => a.ActivityStatus == ActivityStatus.Concluida);
                     double rate = tTotal > 0 ? (double)tCompleted / tTotal * 100 : 0;
@@ -60,10 +73,8 @@ namespace Api.Services
                         CompletionRate = rate,
                         Status = rate == 100 ? "Concluída" : (rate > 0 ? "Em Andamento" : "Não Iniciada")
                     };
-                }).ToList()
+                })]
             };
-
-            return report;
         }
     }
 }
