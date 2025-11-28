@@ -1,0 +1,277 @@
+@page "/sessions"
+@using EduMentorClient.Services
+@using System.Net.Http.Headers
+@inject HttpClient Http
+@inject UserState UserState
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<PageTitle>Sessões de Mentoria</PageTitle>
+
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-extrabold text-[#0056D2]">Minhas Sessões</h1>
+            <p class="mt-1 text-gray-600">Agenda de reuniões e feedbacks.</p>
+        </div>
+        
+        @if (UserState.Role == "Mentor")
+        {
+            <button @onclick="() => showCreateModal = true" class="bg-[#0056D2] hover:bg-[#00419E] text-white px-4 py-2 rounded-lg font-bold shadow transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Agendar Nova
+            </button>
+        }
+    </div>
+
+    @if (loading)
+    {
+        <div class="flex justify-center mt-12">
+            <svg class="animate-spin h-10 w-10 text-[#0056D2]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+    }
+    else if (!sessions.Any())
+    {
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="mt-2 text-gray-500">Nenhuma sessão agendada.</p>
+        </div>
+    }
+    else
+    {
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            @foreach (var session in sessions)
+            {
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition flex flex-col">
+                    <div class="p-6 flex-grow">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                    @(UserState.Role == "Mentor" ? "Aluno" : "Mentor")
+                                </p>
+                                <h3 class="text-lg font-bold text-gray-900 truncate w-40">@session.OtherPartyName</h3>
+                            </div>
+                            <span class="@GetStatusColor(session.Status) px-2 py-1 rounded text-xs font-bold uppercase">
+                                @session.Status
+                            </span>
+                        </div>
+
+                        <div class="flex items-center text-gray-700 mb-4">
+                            <svg class="h-5 w-5 mr-2 text-[#0056D2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="font-medium">
+                                @session.ScheduledAt.ToString("dd/MM/yyyy HH:mm")
+                            </span>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(session.Notes))
+                        {
+                            <div class="bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 text-sm text-yellow-800">
+                                <strong>Feedback:</strong> @session.Notes
+                            </div>
+                        }
+                    </div>
+
+                    <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-end gap-2">
+                        @if (session.Status == "Agendada")
+                        {
+                            <button @onclick="() => CancelSession(session.Id)" class="text-red-600 hover:text-red-800 text-sm font-bold transition">Cancelar</button>
+                            
+                            @if (UserState.Role == "Mentor")
+                            {
+                                <button @onclick="() => OpenFeedbackModal(session)" class="text-[#0056D2] hover:text-blue-800 text-sm font-bold ml-4 transition">Concluir</button>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (showCreateModal)
+{
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-[fadeIn_0.2s_ease-out]">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Agendar Mentoria</h3>
+            
+            <label class="block text-sm font-medium text-gray-700 mb-1">Aluno</label>
+            <select @bind="newSessionStudentId" class="w-full border border-gray-300 rounded-lg p-2.5 mb-4 bg-white focus:ring-[#0056D2] focus:border-[#0056D2] outline-none">
+                <option value="0" disabled selected>Selecione um aluno...</option>
+                @foreach (var student in myStudents)
+                {
+                    <option value="@student.Id">@student.Name</option>
+                }
+            </select>
+            
+            @if (!myStudents.Any())
+            {
+                <p class="text-xs text-red-500 mb-4">Você ainda não tem alunos ativos para agendar.</p>
+            }
+
+            <label class="block text-sm font-medium text-gray-700 mb-1">Data e Hora</label>
+            <input type="datetime-local" @bind="newSessionDate" class="w-full border border-gray-300 rounded-lg p-2.5 mb-6 focus:ring-[#0056D2] focus:border-[#0056D2] outline-none" />
+
+            <div class="flex justify-end gap-3">
+                <button @onclick="() => showCreateModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
+                <button @onclick="CreateSession" disabled="@(newSessionStudentId == 0)" class="px-4 py-2 bg-[#0056D2] text-white rounded-lg font-medium hover:bg-[#00419E] transition disabled:opacity-50 disabled:cursor-not-allowed">Agendar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showFeedbackModal)
+{
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-[fadeIn_0.2s_ease-out]">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Finalizar Sessão</h3>
+            
+            <label class="block text-sm font-medium text-gray-700 mb-1">Notas / Feedback</label>
+            <textarea @bind="feedbackText" rows="4" class="w-full border border-gray-300 rounded-lg p-2.5 mb-6 focus:ring-[#0056D2] focus:border-[#0056D2] outline-none" placeholder="O que foi discutido?"></textarea>
+
+            <div class="flex justify-end gap-3">
+                <button @onclick="() => showFeedbackModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
+                <button @onclick="SubmitFeedback" class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition">Concluir</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool loading = true;
+    private List<SessionDto> sessions = new();
+    private List<StudentSelectDto> myStudents = new();
+    
+    private bool showCreateModal = false;
+    private bool showFeedbackModal = false;
+    
+    private int newSessionStudentId;
+    private DateTime newSessionDate = DateTime.Now.AddDays(1);
+    
+    private int selectedSessionId;
+    private string feedbackText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!UserState.IsLoggedIn) { Nav.NavigateTo("/login"); return; }
+        await LoadSessions();
+        await LoadMyStudents();
+    }
+
+    private async Task LoadSessions()
+    {
+        loading = true;
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "api/session");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+                sessions = await response.Content.ReadFromJsonAsync<List<SessionDto>>() ?? new();
+        }
+        catch { Snackbar.Add("Erro ao carregar sessões.", Severity.Error); }
+        finally { loading = false; }
+    }
+
+    private async Task LoadMyStudents()
+    {
+        if (UserState.Role == "Mentor")
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/mentorship/my-students");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+                var response = await Http.SendAsync(request);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    myStudents = await response.Content.ReadFromJsonAsync<List<StudentSelectDto>>() ?? new();
+                }
+            }
+            catch { }
+        }
+    }
+
+    private async Task CreateSession()
+    {
+        try
+        {
+            var dto = new { StudentId = newSessionStudentId, ScheduledAt = newSessionDate };
+            var request = new HttpRequestMessage(HttpMethod.Post, "api/session");
+            request.Content = JsonContent.Create(dto);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Sessão agendada com sucesso!", Severity.Success);
+                showCreateModal = false;
+                await LoadSessions();
+            }
+            else Snackbar.Add("Erro ao agendar.", Severity.Error);
+        }
+        catch { Snackbar.Add("Erro de conexão", Severity.Error); }
+    }
+
+    private void OpenFeedbackModal(SessionDto s) { selectedSessionId = s.Id; feedbackText = ""; showFeedbackModal = true; }
+
+    private async Task SubmitFeedback()
+    {
+        try
+        {
+            var dto = new { Notes = feedbackText };
+            var request = new HttpRequestMessage(HttpMethod.Patch, $"api/session/{selectedSessionId}/feedback");
+            request.Content = JsonContent.Create(dto);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Sessão concluída!", Severity.Success);
+                showFeedbackModal = false;
+                await LoadSessions();
+            }
+        }
+        catch { Snackbar.Add("Erro ao enviar feedback", Severity.Error); }
+    }
+
+    private async Task CancelSession(int id)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"api/session/{id}/cancel");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+        await Http.SendAsync(request);
+        await LoadSessions();
+    }
+
+    private string GetStatusColor(string status) => status switch
+    {
+        "Agendada" => "bg-blue-100 text-blue-800",
+        "Concluida" => "bg-green-100 text-green-800",
+        "Cancelada" => "bg-red-100 text-red-800",
+        _ => "bg-gray-100 text-gray-800"
+    };
+
+    public class SessionDto
+    {
+        public int Id { get; set; }
+        public string OtherPartyName { get; set; } = string.Empty;
+        public DateTime ScheduledAt { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+    }
+
+    public class StudentSelectDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+}

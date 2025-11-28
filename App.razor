@@ -1,0 +1,89 @@
+﻿@using EduMentorClient.Services
+@using Blazored.LocalStorage
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject ILocalStorageService LocalStorage
+@inject UserState UserState
+@inject NavigationManager Nav
+@inject HttpClient Http
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="flex flex-col items-center justify-center h-screen text-gray-500">
+                <h2 class="text-2xl font-bold mb-2">Página não encontrada</h2>
+                <p>Desculpe, não há nada neste endereço.</p>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await LocalStorage.GetItemAsync<string>("authToken");
+        
+        if (!string.IsNullOrEmpty(token))
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/auth/me");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var response = await Http.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var user = await response.Content.ReadFromJsonAsync<UserMeDto>();
+                    
+                    if (user != null && user.IsAuthenticated)
+                    {
+                        UserState.Token = token;
+                        UserState.UserId = user.UserId;
+                        UserState.Role = user.Role;
+                        UserState.UserName = user.Name; 
+
+                        UserState.NotifyStateChanged();
+
+                        if (Nav.Uri.EndsWith("/login") || Nav.Uri.EndsWith("/register"))
+                        {
+                            Nav.NavigateTo("/");
+                        }
+                    }
+                }
+                else
+                {
+                    await LogoutAndClean();
+                }
+            }
+            catch
+            {
+                await LogoutAndClean();
+            }
+        }
+    }
+
+    private async Task LogoutAndClean()
+    {
+        await LocalStorage.RemoveItemAsync("authToken");
+        await LocalStorage.RemoveItemAsync("userId");
+        await LocalStorage.RemoveItemAsync("userRole");
+        UserState.Token = string.Empty;
+        UserState.UserId = 0;
+        UserState.UserName = string.Empty;
+        UserState.NotifyStateChanged();
+    }
+
+    public class UserMeDto
+    {
+        public int UserId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public bool IsAuthenticated { get; set; }
+    }
+}

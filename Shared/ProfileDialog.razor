@@ -1,0 +1,202 @@
+@using EduMentorClient.Services
+@using System.Net.Http.Headers
+@using Blazored.LocalStorage
+@inject HttpClient Http
+@inject UserState UserState
+@inject ISnackbar Snackbar
+@inject ILocalStorageService LocalStorage
+
+@if (IsVisible)
+{
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 animate-[fadeIn_0.2s]">
+
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-[scaleIn_0.2s]">
+
+            <div class="bg-[#0056D2] rounded-[20px] h-24 w-full relative">
+                <button @onclick="Close" class="absolute top-4 right-4 text-white/80 hover:text-white transition p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col items-center -mt-10 relative z-10 px-6">
+
+                <div
+                    class="h-20 w-20 bg-white rounded-full flex items-center justify-center text-[#0056D2] font-bold text-3xl shadow-lg border-4 border-white">
+                    @(string.IsNullOrEmpty(model.Name) ? "?" : model.Name.Substring(0, 1).ToUpper())
+                </div>
+
+                <div class="text-center mt-3">
+                    <h3 class="text-xl font-bold text-gray-900">Meu Perfil</h3>
+                    <p class="text-gray-500 text-sm">@userEmail</p>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                @if (loading)
+                {
+                    <div class="flex justify-center py-8">
+                        <svg class="animate-spin h-8 w-8 text-[#0056D2]" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Completo</label>
+                        <input type="text" @bind="model.Name"
+                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#0056D2] focus:border-transparent outline-none transition" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Conta</label>
+                            <div
+                                class="bg-blue-50 text-[#0056D2] px-3 py-2.5 rounded-lg text-sm font-bold border border-blue-100">
+                                @UserState.Role
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Área de Interesse</label>
+                            <input type="text" @bind="model.AreaInteresse"
+                                class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#0056D2] outline-none" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bio / Sobre Mim</label>
+                        <textarea @bind="model.Bio" rows="3"
+                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#0056D2] outline-none resize-none"
+                            placeholder="Seus objetivos..."></textarea>
+                    </div>
+                }
+            </div>
+
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                <button @onclick="Close"
+                    class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg text-sm font-medium transition">
+                    Cancelar
+                </button>
+                <button @onclick="SaveProfile" disabled="@saving"
+                    class="px-4 py-2 bg-[#0056D2] text-white hover:bg-[#00419E] rounded-lg text-sm font-bold shadow-md transition disabled:opacity-50 flex items-center gap-2">
+                    @if (saving)
+                    {
+                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                    }
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private bool loading = false;
+    private bool saving = false;
+    private ProfileDto model = new();
+    private string userEmail = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && string.IsNullOrEmpty(model.Name))
+        {
+            await LoadProfile();
+        }
+    }
+
+    private void Close()
+    {
+        IsVisible = false;
+        IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task LoadProfile()
+    {
+        loading = true;
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "api/auth/me");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var user = await response.Content.ReadFromJsonAsync<FullUserDto>();
+                if (user != null)
+                {
+                    model.Name = user.Name ?? "";
+                    model.AreaInteresse = user.AreaInteresse ?? "";
+                    model.Bio = user.Bio ?? "";
+                    userEmail = user.Email ?? "";
+                }
+            }
+        }
+        catch { Snackbar.Add("Erro ao carregar perfil.", Severity.Error); }
+        finally { loading = false; }
+    }
+
+    private async Task SaveProfile()
+    {
+        saving = true;
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Put, "api/auth/me");
+            request.Content = JsonContent.Create(model);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Perfil atualizado!", Severity.Success);
+
+                // Atualiza o estado global
+                UserState.UserName = model.Name;
+                await LocalStorage.SetItemAsync("userName", model.Name);
+                UserState.NotifyStateChanged();
+
+                Close();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao salvar.", Severity.Error);
+            }
+        }
+        catch { Snackbar.Add("Erro de conexão.", Severity.Error); }
+        finally { saving = false; }
+    }
+
+    public class ProfileDto
+    {
+        public string Name { get; set; } = "";
+        public string AreaInteresse { get; set; } = "";
+        public string Bio { get; set; } = "";
+    }
+
+    public class FullUserDto
+    {
+        public int UserId { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Role { get; set; }
+        public string AreaInteresse { get; set; }
+        public string Bio { get; set; }
+    }
+}

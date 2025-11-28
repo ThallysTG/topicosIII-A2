@@ -1,0 +1,148 @@
+@using EduMentorClient.Services
+@using System.Net.Http.Headers
+@using MudBlazor 
+@inject HttpClient Http
+@inject UserState UserState
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form">
+            <MudText Typo="Typo.h6" Class="mb-2">Dados da Trilha</MudText>
+            <MudTextField T="string" Label="Título da Trilha" @bind-Value="trackDto.Title" Required="true" RequiredError="O título é obrigatório." Variant="Variant.Outlined" />
+            <MudTextField T="string" Label="Descrição / Motivação" @bind-Value="trackDto.Description" Lines="2" Variant="Variant.Outlined" Class="mt-3" />
+
+            <MudDivider Class="my-4" />
+
+            <MudText Typo="Typo.h6" Class="mb-2">Adicionar Atividades</MudText>
+            <div class="d-flex gap-2 align-end">
+                <MudTextField T="string" Label="Título da Atividade" @bind-Value="tempActivityTitle" Variant="Variant.Text" />
+                <MudTextField T="string" Label="Link (Opcional)" @bind-Value="tempActivityLink" Variant="Variant.Text" />
+                <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" OnClick="AddActivity" Size="Size.Large" />
+            </div>
+
+            <MudList T="string" Dense="true" Class="mt-4">
+                @if (!trackDto.Activities.Any())
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Nenhuma atividade adicionada ainda.</MudText>
+                }
+                else
+                {
+                    @foreach (var act in trackDto.Activities)
+                    {
+                        <MudListItem>
+                            <div class="d-flex justify-space-between align-center">
+                                <div>
+                                    <MudText><b>@act.Title</b></MudText>
+                                    @if (!string.IsNullOrEmpty(act.Link))
+                                    {
+                                        <MudText Typo="Typo.caption">Link: @act.Link</MudText>
+                                    }
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveActivity(act))" />
+                            </div>
+                        </MudListItem>
+                    }
+                }
+            </MudList>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="loading">
+            @if (loading) { <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/> }
+            else { <span>Salvar Trilha</span> }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int StudentId { get; set; }
+    private MudForm form = default!;
+    private bool loading = false;
+    private CreateManualTrackDto trackDto = new();
+    private string tempActivityTitle = "";
+    private string tempActivityLink = "";
+
+    private void AddActivity()
+    {
+        if (string.IsNullOrWhiteSpace(tempActivityTitle))
+        {
+            Snackbar.Add("Digite um título para a atividade.", Severity.Warning);
+            return;
+        }
+
+        trackDto.Activities.Add(new ManualActivityDto 
+        { 
+            Title = tempActivityTitle, 
+            Link = tempActivityLink,
+            Description = "Atividade manual"
+        });
+
+        tempActivityTitle = "";
+        tempActivityLink = "";
+    }
+
+    private void RemoveActivity(ManualActivityDto item)
+    {
+        trackDto.Activities.Remove(item);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (!form.IsValid) return;
+
+        if (!trackDto.Activities.Any())
+        {
+            Snackbar.Add("Adicione pelo menos uma atividade.", Severity.Warning);
+            return;
+        }
+
+        loading = true;
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, $"api/recommendation/create-manual/{StudentId}");
+            request.Content = JsonContent.Create(trackDto);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Trilha criada com sucesso!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Erro: {response.StatusCode}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro de conexão: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+    
+    public class CreateManualTrackDto
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public List<ManualActivityDto> Activities { get; set; } = new();
+    }
+
+    public class ManualActivityDto
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Link { get; set; } = "";
+    }
+}
