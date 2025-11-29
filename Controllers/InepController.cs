@@ -41,10 +41,12 @@ namespace Api.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> Search(
             [FromQuery] string query,
+            [FromQuery] string? locationFilter, // <--- ADICIONADO AQUI
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 50)
         {
-            var results = await _inepService.SearchCoursesAsync(query, page, pageSize);
+            // Agora a chamada corresponde à assinatura do serviço: (termo, local, pagina, tamanho)
+            var results = await _inepService.SearchCoursesAsync(query, locationFilter, page, pageSize);
             return Ok(results);
         }
     }
