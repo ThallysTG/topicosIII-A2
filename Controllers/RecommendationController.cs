@@ -149,6 +149,53 @@ namespace Api.Controllers
 
             return Ok(new { Message = "Trilha manual criada com sucesso!", TrackId = newTrack.Id });
         }
+
+        [HttpGet("suggestions")]
+        public async Task<IActionResult> GetPromptSuggestions()
+        {
+            var userIdParam = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("id")?.Value;
+            if (!int.TryParse(userIdParam, out int userId)) return Unauthorized();
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            var area = user.AreaInteresse?.ToLower() ?? "";
+            var suggestions = new List<string>();
+
+            if (area.Contains("tec") || area.Contains("prog") || area.Contains("dev") || area.Contains("software") || area.Contains("comput"))
+            {
+                suggestions.Add("Quero aprender C# e .NET do zero para criar APIs.");
+                suggestions.Add("Como me tornar um desenvolvedor Fullstack começando hoje?");
+                suggestions.Add("Quero estudar Inteligência Artificial e Python.");
+                suggestions.Add("Roteiro de estudos para Engenharia de Software.");
+            }
+            else if (area.Contains("saúde") || area.Contains("med") || area.Contains("enf") || area.Contains("bio"))
+            {
+                suggestions.Add("Quero me especializar em Anatomia Humana.");
+                suggestions.Add("Quais os primeiros passos para estudar Enfermagem?");
+                suggestions.Add("Roteiro de estudos para passar em Medicina.");
+            }
+            else if (area.Contains("dir") || area.Contains("jur") || area.Contains("adv"))
+            {
+                suggestions.Add("Quero aprender Direito Civil e Processual.");
+                suggestions.Add("Como me preparar para o exame da OAB?");
+                suggestions.Add("Roteiro de estudos sobre Direito Digital.");
+            }
+            else if (area.Contains("eng") || area.Contains("civil") || area.Contains("elet"))
+            {
+                suggestions.Add("Quero dominar Cálculo e Física para Engenharia.");
+                suggestions.Add("Melhores cursos para Engenharia Civil na minha região.");
+            }
+            else
+            {
+                var areaFormatada = string.IsNullOrEmpty(user.AreaInteresse) ? "minha carreira" : user.AreaInteresse;
+                suggestions.Add($"Quero me tornar um especialista em {areaFormatada}.");
+                suggestions.Add($"Quais os fundamentos para começar em {areaFormatada}?");
+                suggestions.Add($"Crie uma trilha de estudos intensiva sobre {areaFormatada}.");
+            }
+
+            return Ok(suggestions);
+        }
     }
 
     public class ActivityDto

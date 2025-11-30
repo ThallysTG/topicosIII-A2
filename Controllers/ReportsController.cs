@@ -12,9 +12,10 @@ namespace Api.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ReportsController(IReportService reportService, ApplicationDbContext context) : ControllerBase
+    public class ReportsController(IReportService reportService, IGeminiService geminiService, ApplicationDbContext context) : ControllerBase
     {
         private readonly IReportService _reportService = reportService;
+        private readonly IGeminiService _geminiService = geminiService;
         private readonly ApplicationDbContext _context = context;
 
         [HttpGet("my-progress")]
@@ -40,9 +41,9 @@ namespace Api.Controllers
         {
             var mentorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-            bool isLinked = await _context.Mentorships.AnyAsync(m => 
-                m.MentorId == mentorId && 
-                m.StudentId == studentId && 
+            bool isLinked = await _context.Mentorships.AnyAsync(m =>
+                m.MentorId == mentorId &&
+                m.StudentId == studentId &&
                 m.Status == MentorshipStatus.Ativa);
 
             if (!isLinked)
@@ -58,6 +59,36 @@ namespace Api.Controllers
             catch (Exception ex)
             {
                 return NotFound(new { Message = ex.Message });
+            }
+        }
+
+        [HttpGet("ai-analysis")]
+        [Authorize(Roles = "Aluno")]
+        public async Task<IActionResult> GetAiAnalysis()
+        {
+            var studentId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            try
+            {
+                var progress = await _reportService.GetStudentProgressAsync(studentId);
+
+                var analysisRequest = new StudentProgressAnalysisRequest
+                {
+                    StudentName = progress.StudentName,
+                    GlobalCompletionRate = progress.GlobalCompletionRate,
+                    TotalTracks = progress.Tracks.Count,
+                    CompletedTracks = progress.Tracks.Count(t => t.CompletionRate >= 100),
+                    TotalMentoringSessions = progress.CompletedMentoringSessions,
+                    TrackSummaries = progress.Tracks.Select(t => $"{t.Title}: {t.CompletionRate:F0}%").ToList()
+                };
+
+                var aiFeedback = await _geminiService.GetProgressAnalysisAsync(analysisRequest);
+
+                return Ok(new { Feedback = aiFeedback });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Erro ao gerar análise IA: " + ex.Message });
             }
         }
     }

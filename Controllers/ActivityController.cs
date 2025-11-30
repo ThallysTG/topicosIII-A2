@@ -19,8 +19,21 @@ namespace Api.Controllers
             var activity = await _context.StudyActivities.FindAsync(id);
 
             if (activity == null) return NotFound("Atividade não encontrada.");
-            
+
             activity.ActivityStatus = newStatus;
+
+            if (newStatus == ActivityStatus.Concluida)
+            {
+                if (activity.CompletedAt == null)
+                {
+                    activity.CompletedAt = DateTime.UtcNow;
+                }
+            }
+            else
+            {
+                activity.CompletedAt = null;
+            }
+
             await _context.SaveChangesAsync();
 
             return Ok(new { Message = "Status atualizado com sucesso!", Status = newStatus.ToString() });

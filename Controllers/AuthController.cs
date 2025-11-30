@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Api.Data;
 using Api.Models;
 using Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +14,35 @@ namespace Api.Controllers
     {
         private readonly ApplicationDbContext _context = context;
         private readonly TokenService _tokenService = tokenService;
+
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetMe()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id");
+                var userId = int.Parse(userIdClaim?.Value ?? "0");
+
+                var user = await _context.Users.FindAsync(userId);
+
+                if (user == null) return Unauthorized(new { Message = "Usuário não encontrado." });
+
+                return Ok(new
+                {
+                    UserId = user.Id,
+                    Name = user.Name,
+                    Role = user.Role.ToString(),
+                    AreaInteresse = user.AreaInteresse,
+                    IsAuthenticated = true
+                });
+            }
+            catch (Exception)
+            {
+                return Unauthorized(new { Message = "Token inválido." });
+            }
+        }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto model)
@@ -74,6 +105,7 @@ namespace Api.Controllers
                 {
                     Message = "Login realizado com sucesso.",
                     UserId = user.Id,
+                    Name = user.Name,
                     Role = user.Role.ToString(),
                     Token = token
                 });
