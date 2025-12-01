@@ -18,7 +18,7 @@
         <p class="mt-2 text-gray-600">Faça a gestão das suas conexões e acompanhe os seus alunos.</p>
     </div>
 
-    <div class="border-b border-gray-200 mb-6">
+    <div class="">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
             <button @onclick="@(() => activeTab = 0)"
                 class="@(activeTab == 0 ? "border-[#0056D2] text-[#0056D2]" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300") whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors duration-200">
@@ -77,46 +77,48 @@
             }
             else
             {
-                <div class="bg-white shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-t border-gray-200">
+                        <thead>
                             <tr>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aluno
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interesse
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mensagem
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações
-                                </th>
+                                <th class="py-4 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Aluno</th>
+                                <th class="py-4 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Interesse</th>
+                                <th class="py-4 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Mensagem</th>
+                                <th class="py-4 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Data</th>
+                                <th class="py-4 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right border-b border-gray-200">Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody class="divide-y divide-gray-100">
                             @foreach (var request in pendingList)
                             {
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">@request.StudentName</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span
-                                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                <tr class="hover:bg-gray-50 transition duration-150 border-b border-gray-100 last:border-b-0">
+                                    <td class="py-4 px-4 text-sm font-semibold text-gray-900">@request.StudentName</td>
+                                    <td class="py-4 px-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                                             @request.StudentArea
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="@request.InitialMessage">
-                                        @request.InitialMessage</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        @request.RequestDate.ToShortDateString()</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button @onclick="@(() => UpdateStatus(request, 1))"
-                                            class="text-green-600 hover:text-green-900 mr-4 font-bold transition">Aceitar</button>
-                                        <button @onclick="@(() => UpdateStatus(request, 2))"
-                                            class="text-red-600 hover:text-red-900 font-bold transition">Recusar</button>
+                                    <td class="py-4 px-4 text-sm text-gray-600 max-w-xs truncate" title="@request.InitialMessage">
+                                        @request.InitialMessage
+                                    </td>
+                                    <td class="py-4 px-4 text-sm text-gray-500 font-mono">
+                                        @request.RequestDate.ToShortDateString()
+                                    </td>
+                                    <td class="py-4 px-4 text-right text-sm font-medium flex justify-end gap-4">
+                                        <button @onclick="@(() => UpdateStatus(request, 1))" 
+                                                class="text-green-600 hover:text-green-800 flex items-center gap-1 transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Aceitar
+                                        </button>
+                                        <button @onclick="@(() => UpdateStatus(request, 2))" 
+                                                class="text-red-600 hover:text-red-800 flex items-center gap-1 transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Recusar
+                                        </button>
                                     </td>
                                 </tr>
                             }
