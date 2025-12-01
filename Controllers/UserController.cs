@@ -78,7 +78,7 @@ namespace Api.Controllers
             return StatusCode(201, new { Message = "Usuário criado com sucesso.", UserId = newUser.Id });
         }
 
-        [HttpPut("{id}")]
+        /* [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto model)
         {
             var user = await _context.Users.FindAsync(id);
@@ -106,7 +106,7 @@ namespace Api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { Message = "Usuário atualizado com sucesso." });
-        }
+        } */
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)

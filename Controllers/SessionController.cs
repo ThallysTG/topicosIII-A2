@@ -15,7 +15,6 @@ namespace Api.Controllers
     {
         private readonly ApplicationDbContext _context = context;
 
-        // 1. Listar minhas sessões
         [HttpGet]
         public async Task<IActionResult> GetMySessions()
         {
@@ -27,12 +26,12 @@ namespace Api.Controllers
             if (role == nameof(UserRole.Mentor))
             {
                 query = query.Where(s => s.MentorUserId == userId)
-                             .Include(s => s.StudentUser); // Precisamos adicionar navegação no Model (ver passo 4)
+                             .Include(s => s.StudentUser);
             }
             else
             {
                 query = query.Where(s => s.StudentUserId == userId)
-                             .Include(s => s.MentorUser); // Precisamos adicionar navegação no Model
+                             .Include(s => s.MentorUser);
             }
 
             var sessions = await query.OrderByDescending(s => s.ScheduledAt).ToListAsync();
@@ -40,7 +39,6 @@ namespace Api.Controllers
             var dtos = sessions.Select(s => new SessionResponseDto
             {
                 Id = s.Id,
-                // Se sou mentor, mostro o nome do aluno. Se sou aluno, mostro o mentor.
                 OtherPartyName = role == nameof(UserRole.Mentor) 
                     ? (s.StudentUser?.Name ?? "Aluno") 
                     : (s.MentorUser?.Name ?? "Mentor"),
@@ -52,14 +50,12 @@ namespace Api.Controllers
             return Ok(dtos);
         }
 
-        // 2. Agendar Sessão (Apenas Mentor cria para seus alunos ativos)
         [HttpPost]
         [Authorize(Roles = "Mentor")]
         public async Task<IActionResult> CreateSession([FromBody] CreateSessionDto dto)
         {
             var mentorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-            // Verifica se são conectados
             bool isLinked = await _context.Mentorships.AnyAsync(m => 
                 m.MentorId == mentorId && 
                 m.StudentId == dto.StudentId && 
@@ -81,7 +77,6 @@ namespace Api.Controllers
             return Ok("Sessão agendada com sucesso.");
         }
 
-        // 3. Concluir/Feedback (Apenas Mentor)
         [HttpPatch("{id}/feedback")]
         [Authorize(Roles = "Mentor")]
         public async Task<IActionResult> AddFeedback(int id, [FromBody] UpdateSessionNotesDto dto)
@@ -99,7 +94,6 @@ namespace Api.Controllers
             return Ok("Feedback registrado.");
         }
 
-        // 4. Cancelar (Ambos podem)
         [HttpPatch("{id}/cancel")]
         public async Task<IActionResult> CancelSession(int id)
         {
@@ -108,7 +102,6 @@ namespace Api.Controllers
 
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-            // Só permite cancelar se o usuário for o mentor ou o aluno daquela sessão
             if (session.MentorUserId != userId && session.StudentUserId != userId) return Forbid();
 
             session.SessionStatus = SessionStatus.Cancelada;

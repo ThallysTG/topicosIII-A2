@@ -101,8 +101,7 @@ namespace Api.Services
                 if (lastPart != null && lastPart.Length == 2 && _siglasValidas.Contains(lastPart))
                 {
                     detectedState = lastPart;
-                    citySearchPart = cleanFilter.Replace(lastPart, "", StringComparison.OrdinalIgnoreCase)
-                                                .Trim(new[] { ' ', ',', '-' });
+                    citySearchPart = cleanFilter.Replace(lastPart, "", StringComparison.OrdinalIgnoreCase).Trim(new[] { ' ', ',', '-' });
                 }
 
                 if (detectedState == null)
@@ -112,8 +111,7 @@ namespace Api.Services
                         if (cleanFilter.Contains(estado.Key, StringComparison.OrdinalIgnoreCase))
                         {
                             detectedState = estado.Value;
-                            citySearchPart = cleanFilter.Replace(estado.Key, "", StringComparison.OrdinalIgnoreCase)
-                                                        .Trim(new[] { ' ', ',', '-' });
+                            citySearchPart = cleanFilter.Replace(estado.Key, "", StringComparison.OrdinalIgnoreCase).Trim(new[] { ' ', ',', '-' });
                             break;
                         }
                     }

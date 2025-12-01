@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Api.Data;
+using Api.Dtos;
 using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -15,32 +16,34 @@ namespace Api.Controllers
         private readonly ApplicationDbContext _context = context;
         private readonly TokenService _tokenService = tokenService;
 
-
-        [HttpGet("me")]
-        [Authorize]
-        public async Task<IActionResult> GetMe()
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id");
-                var userId = int.Parse(userIdClaim?.Value ?? "0");
+                var user = await _context.Users
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(u => u.Email == model.Email);
 
-                var user = await _context.Users.FindAsync(userId);
+                if (user == null || !BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
+                {
+                    return Unauthorized(new { Message = "Usuário ou senha inválidos." });
+                }
 
-                if (user == null) return Unauthorized(new { Message = "Usuário não encontrado." });
+                var token = _tokenService.GenerateToken(user);
 
                 return Ok(new
                 {
+                    Message = "Login realizado com sucesso.",
                     UserId = user.Id,
                     Name = user.Name,
                     Role = user.Role.ToString(),
-                    AreaInteresse = user.AreaInteresse,
-                    IsAuthenticated = true
+                    Token = token
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return Unauthorized(new { Message = "Token inválido." });
+                return StatusCode(500, new { Message = "Falha interna.", Error = ex.Message });
             }
         }
 
@@ -85,35 +88,51 @@ namespace Api.Controllers
             }
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto model)
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetMe()
         {
             try
             {
-                var user = await _context.Users
-                    .AsNoTracking()
-                    .SingleOrDefaultAsync(u => u.Email == model.Email);
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id");
+                var userId = int.Parse(userIdClaim?.Value ?? "0");
 
-                if (user == null || !BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
-                {
-                    return Unauthorized(new { Message = "Usuário ou senha inválidos." });
-                }
+                var user = await _context.Users.FindAsync(userId);
 
-                var token = _tokenService.GenerateToken(user);
+                if (user == null) return Unauthorized(new { Message = "Usuário não encontrado." });
 
-                return Ok(new
-                {
-                    Message = "Login realizado com sucesso.",
+                return Ok(new 
+                { 
                     UserId = user.Id,
                     Name = user.Name,
+                    Email = user.Email,
                     Role = user.Role.ToString(),
-                    Token = token
+                    AreaInteresse = user.AreaInteresse,
+                    Bio = user.Bio,
+                    IsAuthenticated = true
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { Message = "Falha interna.", Error = ex.Message });
+                return Unauthorized(new { Message = "Token inválido." });
             }
+        }
+
+        [HttpPut("me")]
+        [Authorize]
+        public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileDto model)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null) return NotFound();
+
+            user.Name = model.Name;
+            user.AreaInteresse = model.AreaInteresse;
+            user.Bio = model.Bio;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { Message = "Perfil atualizado com sucesso." });
         }
     }
 }
