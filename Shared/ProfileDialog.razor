@@ -8,11 +8,12 @@
 
 @if (IsVisible)
 {
-    <div class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 animate-[fadeIn_0.2s]">
+    <div
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 animate-[fadeIn_0.2s] font-sans">
 
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-[scaleIn_0.2s]">
 
-            <div class="bg-[#0056D2] rounded-[20px] h-24 w-full relative">
+            <div class="bg-[#0056D2] rounded-2xl h-24 mx-2 mt-2 relative shadow-sm">
                 <button @onclick="Close" class="absolute top-4 right-4 text-white/80 hover:text-white transition p-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
@@ -79,13 +80,13 @@
                 }
             </div>
 
-            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+            <div class="bg-gray-50 p-4 flex justify-end gap-3 border-t border-gray-100">
                 <button @onclick="Close"
-                    class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg text-sm font-medium transition">
+                    class="px-4 py-2 w-24 text-gray-600 hover:bg-gray-200 rounded-lg text-sm font-medium transition">
                     Cancelar
                 </button>
                 <button @onclick="SaveProfile" disabled="@saving"
-                    class="px-4 py-2 bg-[#0056D2] text-white hover:bg-[#00419E] rounded-lg text-sm font-bold shadow-md transition disabled:opacity-50 flex items-center gap-2">
+                    class="px-4 py-2 w-24 bg-[#0056D2] text-white hover:bg-[#00419E] rounded-lg text-sm font-bold shadow-md transition disabled:opacity-50 flex items-center gap-2">
                     @if (saving)
                     {
                         <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -185,18 +186,18 @@
 
     public class ProfileDto
     {
-        public string Name { get; set; } = "";
-        public string AreaInteresse { get; set; } = "";
-        public string Bio { get; set; } = "";
+        public string Name { get; set; } = string.Empty;
+        public string AreaInteresse { get; set; } = string.Empty;
+        public string Bio { get; set; } = string.Empty;
     }
 
     public class FullUserDto
     {
         public int UserId { get; set; }
-        public string Name { get; set; }
-        public string Email { get; set; }
-        public string Role { get; set; }
-        public string AreaInteresse { get; set; }
-        public string Bio { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string AreaInteresse { get; set; } = string.Empty;
+        public string Bio { get; set; } = string.Empty;
     }
 }
