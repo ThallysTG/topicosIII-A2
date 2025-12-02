@@ -80,6 +80,12 @@ namespace Api.Data
             modelBuilder.Entity<StudyTrack>()
                 .Property(st => st.Source)
                 .HasConversion<string>();
+                
+            modelBuilder.Entity<TrackInstitution>()
+                .HasOne(ti => ti.StudyTrack)
+                .WithMany(st => st.Institutions)
+                .HasForeignKey(ti => ti.StudyTrackId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

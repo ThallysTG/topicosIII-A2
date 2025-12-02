@@ -14,6 +14,7 @@ namespace Api.Models
         public string? Title { get; set; }
         public string? Description { get; set; }
         public RecommendationSource Source { get; set; }
-        public ICollection<StudyActivity> StudyActivities { get; set; } = new List<StudyActivity>();
+        public ICollection<StudyActivity> StudyActivities { get; set; } = [];
+        public ICollection<TrackInstitution> Institutions { get; set; } = [];
     }
 }

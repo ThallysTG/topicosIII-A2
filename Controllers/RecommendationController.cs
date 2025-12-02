@@ -40,7 +40,7 @@ namespace Api.Controllers
                 if (!string.IsNullOrEmpty(aiResponse.SuggestedCourse))
                 {
                     coursesFound = await _inepService.SearchCoursesAsync(
-                        aiResponse.SuggestedCourse, 
+                        aiResponse.SuggestedCourse,
                         aiResponse.SuggestedLocation
                     );
                 }
@@ -66,6 +66,17 @@ namespace Api.Controllers
                     });
                 }
 
+                foreach (var course in coursesFound.Take(5))
+                {
+                    newTrack.Institutions.Add(new TrackInstitution
+                    {
+                        InstitutionName = course.InstitutionName,
+                        CourseName = course.CourseName,
+                        City = course.City,
+                        State = course.State
+                    });
+                }
+
                 _context.StudyTracks.Add(newTrack);
                 await _context.SaveChangesAsync();
 
@@ -79,7 +90,7 @@ namespace Api.Controllers
                 _context.RecommendationLogs.Add(log);
                 await _context.SaveChangesAsync();
 
-                var responseActivities = newTrack.StudyActivities.Select(a => new ActivityDto 
+                var responseActivities = newTrack.StudyActivities.Select(a => new ActivityDto
                 {
                     Id = a.Id,
                     Title = a.Title,
@@ -88,17 +99,17 @@ namespace Api.Controllers
                     IsCompleted = a.ActivityStatus == ActivityStatus.Concluida
                 }).ToList();
 
-                return Ok(new 
-                { 
-                    AiPlan = new 
+                return Ok(new
+                {
+                    AiPlan = new
                     {
                         PlanTitle = newTrack.Title,
                         Motivation = newTrack.Description,
                         SuggestedCourse = aiResponse.SuggestedCourse,
                         SuggestedLocation = aiResponse.SuggestedLocation,
                         Activities = responseActivities
-                    }, 
-                    InepOptions = coursesFound 
+                    },
+                    InepOptions = coursesFound
                 });
             }
             catch (Exception ex)
@@ -113,12 +124,12 @@ namespace Api.Controllers
         {
             var mentorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-            bool isLinked = await _context.Mentorships.AnyAsync(m => 
-                m.MentorId == mentorId && 
-                m.StudentId == studentId && 
+            bool isLinked = await _context.Mentorships.AnyAsync(m =>
+                m.MentorId == mentorId &&
+                m.StudentId == studentId &&
                 m.Status == MentorshipStatus.Ativa);
 
-            if (!isLinked) 
+            if (!isLinked)
             {
                 return StatusCode(403, new { Message = "Você não tem permissão para criar trilhas para este aluno." });
             }
