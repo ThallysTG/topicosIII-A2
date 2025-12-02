@@ -1,194 +1,171 @@
 @page "/admin/importar-inep"
-@using System.Net.Http.Headers
+@layout Client.Layout.MainLayout
 @using EduMentorClient.Services
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
 @inject HttpClient Http
 @inject UserState UserState
-@inject NavigationManager Nav
 @inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@inject IJSRuntime JS
 
-<div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-3xl mx-auto">
+<PageTitle>Dados do INEP - Admin</PageTitle>
+
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    
+    <div class="mb-10">
+        <h1 class="text-3xl font-extrabold text-[#0056D2]">Base de Dados INEP</h1>
+        <p class="mt-2 text-gray-600">Faça a gestão, importação e limpeza dos dados do Censo da Educação Superior.</p>
+    </div>
+
+    <div class="flex flex-col gap-8">
         
-        <div class="text-center mb-10">
-            <h1 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                Base de Dados INEP
-            </h1>
-            <p class="mt-4 text-lg text-gray-500">
-                Gestão da importação dos dados do Censo da Educação Superior.
-            </p>
-        </div>
-
-        <div class="bg-white shadow-xl rounded-3xl overflow-hidden border border-gray-100">
-            <div class="p-8">
-                
-                @if (!string.IsNullOrEmpty(ErrorMessage))
-                {
-                    <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r animate-[fadeIn_0.3s_ease-out]">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-red-700">@ErrorMessage</p>
-                            </div>
-                        </div>
-                    </div>
-                }
-
-                @if (!string.IsNullOrEmpty(SuccessMessage))
-                {
-                    <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r animate-[fadeIn_0.3s_ease-out]">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-green-700">@SuccessMessage</p>
-                            </div>
-                        </div>
-                    </div>
-                }
-
-                @if (IsLoadingStatus)
-                {
-                    <div class="flex flex-col items-center justify-center py-12">
-                        <svg class="animate-spin h-10 w-10 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span class="text-gray-500 text-sm">Verificando status da base de dados...</span>
-                    </div>
-                }
-                else if (UploadBlocked)
-                {
-                    <div class="rounded-md bg-blue-50 border border-blue-100 p-8 text-center animate-[fadeIn_0.5s_ease-out]">
-                        <div class="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                            <svg class="h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-900">Base de Dados Atualizada</h3>
-                        <p class="mt-2 text-sm text-gray-600 max-w-md mx-auto">
-                            Os dados do INEP já foram carregados no sistema@(LastUpdate.HasValue ? $" em {LastUpdate.Value:dd/MM/yyyy às HH:mm}" : "").
-                        </p>
-                        <div class="mt-6">
-                            <p class="text-xs text-blue-800 bg-blue-100 inline-block px-4 py-2 rounded-full font-medium">
-                                A importação está bloqueada para evitar duplicidade.
-                            </p>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <form @onsubmit:preventDefault>
-                        <div class="relative group"
-                             @ondragenter="OnDragEnter"
-                             @ondragleave="OnDragLeave"
-                             @ondragover="OnDragEnter">
-                            
-                            <div class="@DropClass flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-all duration-200">
-                                <div class="space-y-2 text-center w-full">
-                                    <div class="mx-auto h-12 w-12 text-gray-400 group-hover:text-blue-500 transition-colors">
-                                        <svg class="h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                    </div>
-                                    
-                                    <div class="text-sm text-gray-600 relative z-10">
-                                        <label for="file-upload" class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
-                                            <span>Selecione um arquivo CSV</span>
-                                            <InputFile OnChange="@LoadFiles" id="file-upload" class="sr-only" accept=".csv" />
-                                        </label>
-                                        <span class="pl-1">ou arraste e solte</span>
-                                    </div>
-                                    
-                                    <p class="text-xs text-gray-500">Formato CSV até 500MB (UTF-8)</p>
-                                    
-                                    @if (SelectedFile != null)
-                                    {
-                                        <div class="mt-4 animate-[fadeIn_0.3s_ease-out]">
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                                                📄 @SelectedFile.Name 
-                                                <span class="ml-2 font-normal text-xs text-blue-500 opacity-75">
-                                                    (@((SelectedFile.Size / 1024.0 / 1024.0).ToString("F2")) MB)
-                                                </span>
-                                            </span>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                            
-                            <InputFile OnChange="@LoadFiles" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" accept=".csv" />
-                        </div>
-
-                        <div class="mt-8">
-                            <button @onclick="UploadFile" disabled="@(IsBusy || SelectedFile == null)" 
-                                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                
-                                @if (IsBusy)
-                                {
-                                    <div class="flex items-center">
-                                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span>Processando Importação (Pode demorar)...</span>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <span>Importar Dados</span>
-                                }
-                            </button>
-                        </div>
-                    </form>
-                }
+        <div class="bg-white shadow-lg rounded-xl border border-gray-200 p-8 h-full flex flex-col">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="p-3 bg-blue-100 rounded-full text-[#0056D2]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Importar CSV</h3>
+                    <p class="text-sm text-gray-500">Atualizar base de dados</p>
+                </div>
             </div>
             
-            @if (!UploadBlocked && !IsLoadingStatus)
+            @if (inepStatus != null && inepStatus.JaExiste)
             {
-                <div class="bg-gray-50 px-8 py-4 border-t border-gray-100">
-                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Requisitos do CSV</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600">
-                        <div>
-                            <span class="font-bold">Separador:</span> Ponto e vírgula (;)
-                        </div>
-                        <div>
-                            <span class="font-bold">Encoding:</span> UTF-8 recomendado
-                        </div>
-                        <div class="col-span-1 md:col-span-2">
-                            <span class="font-bold">Colunas Obrigatórias:</span> CO_IES, NO_IES, NO_CURSO, NO_MUNICIPIO
-                        </div>
+                <div class="flex-grow flex flex-col items-center justify-center bg-green-50 border border-green-200 rounded-lg p-6 text-center animate-[fadeIn_0.5s]">
+                    <div class="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-green-800">Base de Dados Populada!</h4>
+                    <p class="text-green-700 mt-2 text-sm">
+                        @inepStatus.Mensagem
+                    </p>
+                    @if (inepStatus.DataUltimaAtualizacao.HasValue)
+                    {
+                        <p class="text-green-600 text-xs mt-1">
+                            Última verificação: @inepStatus.DataUltimaAtualizacao.Value.ToString("dd/MM/yyyy HH:mm")
+                        </p>
+                    }
+                    <div class="mt-6 p-3 bg-white bg-opacity-60 rounded-lg border border-green-100">
+                        <p class="text-green-800 text-xs font-medium flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Para importar novos dados, limpe a base primeiro.
+                        </p>
                     </div>
                 </div>
             }
+            else
+            {
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-800">
+                    <p class="font-bold mb-1">Instruções:</p>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700">
+                        <li>Use o arquivo oficial do INEP (<code>.csv</code>).</li>
+                        <li>O arquivo deve usar <strong>ponto e vírgula (;)</strong> como separador.</li>
+                        <li>A codificação deve ser <strong>Latin1</strong>.</li>
+                    </ul>
+                </div>
+
+                <div class="flex flex-col gap-4 flex-grow">
+                    <label class="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-blue-50 hover:border-[#0056D2] transition group relative overflow-hidden">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6 relative z-10">
+                            <svg class="w-10 h-10 mb-3 text-gray-400 group-hover:text-[#0056D2] transition" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p class="text-sm text-gray-500 group-hover:text-[#0056D2]"><span class="font-bold">Clique para carregar</span> ou arraste aqui</p>
+                            <p class="text-xs text-gray-400 mt-1">CSV (MAX. 500MB)</p>
+                        </div>
+                        <InputFile OnChange="UploadFile" class="hidden" accept=".csv" />
+                        
+                        @if (isUploading)
+                        {
+                            <div class="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center z-20">
+                                <svg class="animate-spin h-10 w-10 text-[#0056D2] mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <p class="text-sm font-bold text-[#0056D2]">A processar dados...</p>
+                                <p class="text-xs text-gray-500">Isso pode demorar alguns minutos.</p>
+                            </div>
+                        }
+                    </label>
+                </div>
+            }
+        </div>
+
+        <div class="space-y-8">
+            
+            <div class="bg-white shadow-lg rounded-xl border border-gray-200 p-8">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="p-3 bg-green-100 rounded-full text-green-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Exportar Dados</h3>
+                        <p class="text-sm text-gray-500">Backup da base atual</p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mb-6">
+                    Gera um arquivo CSV contendo todos os cursos e instituições atualmente registados.
+                </p>
+                <button @onclick="DownloadCsv" disabled="@(isDownloading || inepStatus?.JaExiste == false)"
+                        class="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-bold shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    @if (isDownloading)
+                    {
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span>A Gerar Arquivo...</span>
+                    }
+                    else
+                    {
+                        <span>Baixar CSV</span>
+                    }
+                </button>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-xl border border-red-200 p-8 relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-8 -mr-8 w-24 h-24 bg-red-100 rounded-full blur-2xl opacity-50"></div>
+                
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="p-3 bg-red-100 rounded-full text-red-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-red-700">Zona de Perigo</h3>
+                        <p class="text-sm text-red-400">Limpeza de dados</p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mb-6">
+                    Esta ação removerá <b>todos</b> os cursos do banco. Utilize para desbloquear o upload.
+                </p>
+                <button @onclick="ClearDatabase" disabled="@(isClearing || inepStatus?.JaExiste == false)"
+                        class="w-full flex items-center justify-center gap-2 bg-white border-2 border-red-500 text-red-600 hover:bg-red-50 px-4 py-3 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    @if (isClearing)
+                    {
+                        <svg class="animate-spin h-5 w-5 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span>A Limpar...</span>
+                    }
+                    else
+                    {
+                        <span>Limpar Base de Dados</span>
+                    }
+                </button>
+            </div>
+
         </div>
     </div>
 </div>
 
 @code {
-    public class InepStatusDto
-    {
-        public bool JaExiste { get; set; }
-        public DateTime? DataUltimaAtualizacao { get; set; }
-        public string? Mensagem { get; set; }
-    }
-
-    private IBrowserFile? SelectedFile;
-    private bool IsBusy = false;
-    private bool IsLoadingStatus = true;
-    private bool UploadBlocked = false;
-    private DateTime? LastUpdate;
-    private string? ErrorMessage;
-    private string? SuccessMessage;
-    private bool IsDragHover = false;
-    private long MaxFileSize = 1024L * 1024L * 500L; 
-
-    private string DropClass => IsDragHover ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-400 hover:bg-blue-50";
+    private bool isUploading = false;
+    private bool isDownloading = false;
+    private bool isClearing = false;
+    
+    private InepStatusDto? inepStatus;
 
     protected override async Task OnInitializedAsync()
     {
@@ -197,117 +174,162 @@
             Nav.NavigateTo("/login");
             return;
         }
-
+        
         await LoadStatus();
     }
 
     private async Task LoadStatus()
     {
-        try 
+        try
         {
-            IsLoadingStatus = true;
-            
             var request = new HttpRequestMessage(HttpMethod.Get, "api/inep/status");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
-
+            
             var response = await Http.SendAsync(request);
-
             if (response.IsSuccessStatusCode)
             {
-                var status = await response.Content.ReadFromJsonAsync<InepStatusDto>();
-                if (status != null && status.JaExiste)
-                {
-                    UploadBlocked = true;
-                    LastUpdate = status.DataUltimaAtualizacao;
-                }
-            }
-            else
-            {
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    Nav.NavigateTo("/login");
-                }
-                ErrorMessage = "Não foi possível verificar o status da base de dados.";
+                inepStatus = await response.Content.ReadFromJsonAsync<InepStatusDto>();
             }
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Erro ao conectar: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            IsLoadingStatus = false;
-        }
+        catch { }
     }
 
-    private void OnDragEnter() => IsDragHover = true;
-    private void OnDragLeave() => IsDragHover = false;
-
-    private void LoadFiles(InputFileChangeEventArgs e)
+    private async Task UploadFile(InputFileChangeEventArgs e)
     {
-        ErrorMessage = null;
-        SuccessMessage = null;
-        IsDragHover = false;
+        var file = e.File;
+        if (file == null) return;
 
-        if (e.File.Size > MaxFileSize)
-        {
-            ErrorMessage = $"O arquivo excede o limite de {MaxFileSize / 1024 / 1024}MB.";
-            return;
-        }
-
-        if (!e.File.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
-        {
-            ErrorMessage = "Por favor, selecione apenas arquivos .csv";
-            return;
-        }
-
-        SelectedFile = e.File;
-    }
-
-    private async Task UploadFile()
-    {
-        if (SelectedFile == null) return;
-
-        IsBusy = true;
-        ErrorMessage = null;
-        SuccessMessage = null;
+        // Configuração de tamanho e timeout
+        long maxFileSize = 1024L * 1024L * 500L; // 500MB
+        isUploading = true;
 
         try
         {
             using var content = new MultipartFormDataContent();
-            using var fileContent = new StreamContent(SelectedFile.OpenReadStream(MaxFileSize));
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
-            content.Add(fileContent, "file", SelectedFile.Name);
+            var fileContent = new StreamContent(file.OpenReadStream(maxFileSize));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+            content.Add(fileContent, "file", file.Name);
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "api/inep/import");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
-            request.Content = content;
+            // --- CORREÇÃO: Usando novo HttpClient dedicado para o upload ---
+            // Isso evita o erro "This instance has already started one or more requests"
+            // ao tentar mudar o Timeout do cliente global.
+            using var uploadClient = new HttpClient();
+            uploadClient.BaseAddress = Http.BaseAddress;
+            uploadClient.Timeout = TimeSpan.FromMinutes(20); // Timeout longo
+            
+            // Copia o token de autenticação
+            if (!string.IsNullOrEmpty(UserState.Token))
+            {
+                uploadClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+            }
 
-            var response = await Http.SendAsync(request);
+            var response = await uploadClient.PostAsync("api/inep/import", content);
+            // --------------------------------------------------------------
 
             if (response.IsSuccessStatusCode)
             {
-                SuccessMessage = "Importação concluída com sucesso!";
-                Snackbar.Add("Importação concluída!", Severity.Success);
-                SelectedFile = null;
-                UploadBlocked = true;
-                LastUpdate = DateTime.Now;
+                Snackbar.Add("Importação concluída com sucesso!", Severity.Success);
+                await LoadStatus();
             }
             else
             {
-                var errorBody = await response.Content.ReadAsStringAsync();
-                ErrorMessage = $"Erro na importação: {errorBody}";
-                Snackbar.Add("Erro ao importar dados.", Severity.Error);
+                var error = await response.Content.ReadAsStringAsync();
+                // Tratamento amigável para BadRequest vindo do Controller
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    Snackbar.Add("Aviso: " + error, Severity.Warning);
+                }
+                else
+                {
+                    Snackbar.Add($"Erro na importação: {response.StatusCode}", Severity.Error);
+                }
             }
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Erro de conexão: {ex.Message}";
+            Snackbar.Add($"Erro de conexão/upload: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private async Task DownloadCsv()
+    {
+        isDownloading = true;
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "api/inep/export");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+            
+            // Para download, usamos o cliente padrão pois não costuma estourar timeout tão fácil quanto upload
+            // Mas se necessário, podemos usar a mesma estratégia do uploadClient
+            
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                var fileName = $"inep_export_{DateTime.Now:yyyyMMdd}.csv";
+
+                await JS.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileContent), "text/csv");
+                
+                Snackbar.Add("Download concluído!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Erro ao exportar.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isDownloading = false;
+        }
+    }
+
+    private async Task ClearDatabase()
+    {
+        bool confirm = await JS.InvokeAsync<bool>("confirm", "ATENÇÃO CRÍTICA: Isso apagará TODOS os cursos do INEP. Deseja continuar?");
+        
+        if (!confirm) return;
+
+        isClearing = true;
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Delete, "api/inep/clear");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+            
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Base de dados limpa com sucesso.", Severity.Success);
+                await LoadStatus();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao limpar dados.", Severity.Error);
+            }
+        }
+        catch
+        {
             Snackbar.Add("Erro de conexão.", Severity.Error);
         }
         finally
         {
-            IsBusy = false;
+            isClearing = false;
         }
+    }
+
+    public class InepStatusDto
+    {
+        public bool JaExiste { get; set; }
+        public DateTime? DataUltimaAtualizacao { get; set; }
+        public string Mensagem { get; set; }
     }
 }
