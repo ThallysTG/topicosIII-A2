@@ -42,9 +42,7 @@
 
                 <div class="relative bg-white shadow-xl rounded-3xl border border-gray-200 focus:ring-0">
                     <label for="objective" class="sr-only">O teu objetivo</label>
-                    <textarea id="objective" rows="3" @bind="userGoal"
-                        class="block w-full text-lg border-none rounded-3xl p-4 pr-16 resize-none focus:ring-0 text-gray-800 placeholder-gray-400 bg-transparent"
-                        placeholder="Digite o seu objetivo ou escolha uma sugestão acima..."></textarea>
+                    <textarea id="objective" rows="3" @bind="userGoal" @bind:event="oninput" class="block w-full text-lg border-none rounded-3xl p-4 pr-16 resize-none focus:ring-0 text-gray-800 placeholder-gray-400 bg-transparent"  placeholder="Digite o seu objetivo ou escolha uma sugestão acima..."></textarea>
                     <div class="absolute bottom-2 right-2">
                         <button @onclick="GenerateTrack" disabled="@(loading || string.IsNullOrWhiteSpace(userGoal))"
                             class="flex items-center justify-center h-10 w-10 rounded-full bg-[#0056D2] text-white hover:bg-[#00419E] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg">
