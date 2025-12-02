@@ -34,14 +34,14 @@ namespace Api.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<MentoringSession>()
-                .HasOne<User>()
+                .HasOne(ms => ms.StudentUser)
                 .WithMany()
                 .HasForeignKey(ms => ms.StudentUserId)
                 .HasConstraintName("FK_MentoringSession_Student")
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<MentoringSession>()
-                .HasOne<User>()
+                .HasOne(ms => ms.MentorUser)
                 .WithMany()
                 .HasForeignKey(ms => ms.MentorUserId)
                 .HasConstraintName("FK_MentoringSession_Mentor")
