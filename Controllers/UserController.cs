@@ -109,22 +109,45 @@ namespace Api.Controllers
         } */
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> ForceDeleteUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-
-            if (user == null) return NotFound(new { Message = "Usuário não encontrado." });
-
-            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
             if (id == currentUserId)
             {
-                return BadRequest(new { Message = "Você não pode excluir sua própria conta de administrador por aqui." });
+                return BadRequest(new { Message = "Você não pode excluir sua própria conta enquanto está logado." });
             }
 
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound(new { Message = "Usuário não encontrado." });
 
-            return Ok(new { Message = "Usuário excluído com sucesso." });
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var logs = _context.RecommendationLogs.Where(x => x.StudentUserId == id);
+                _context.RecommendationLogs.RemoveRange(logs);
+
+                var sessions = _context.MentoringSessions.Where(x => x.StudentUserId == id || x.MentorUserId == id);
+                _context.MentoringSessions.RemoveRange(sessions);
+
+                var mentorships = _context.Mentorships.Where(x => x.StudentId == id || x.MentorId == id);
+                _context.Mentorships.RemoveRange(mentorships);
+
+                var tracks = _context.StudyTracks.Where(x => x.StudentUserId == id);
+                _context.StudyTracks.RemoveRange(tracks);
+
+                _context.Users.Remove(user);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { Message = "Usuário e todos os seus dados vinculados foram excluídos." });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { Message = $"Erro ao excluir usuário: {ex.Message}" });
+            }
         }
 
         [HttpDelete("reset-database")]

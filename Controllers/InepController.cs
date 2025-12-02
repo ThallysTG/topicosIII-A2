@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Data;
+using CsvHelper;
+using System.Globalization;
+using System.Text;
 
 namespace Api.Controllers
 {
@@ -31,14 +34,14 @@ namespace Api.Controllers
 
         [HttpPost("import")]
         [Authorize(Roles = "Admin")]
-        [DisableRequestSizeLimit] 
+        [DisableRequestSizeLimit]
         public async Task<IActionResult> ImportCsv(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("Envie um arquivo CSV válido.");
 
             var existeDados = await _context.InepCourses.AnyAsync();
-            
+
             if (existeDados)
             {
                 return BadRequest("A base de dados já contém registros. Limpe os dados antes de importar novamente.");
@@ -53,6 +56,28 @@ namespace Api.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, $"Erro na importação: {ex.Message}");
+            }
+        }
+
+        [HttpGet("export")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ExportCsv()
+        {
+            var courses = await _context.InepCourses.AsNoTracking().ToListAsync();
+
+            if (courses == null || !courses.Any())
+            {
+                return NotFound("Nenhum dado encontrado para exportar.");
+            }
+
+            using var memoryStream = new MemoryStream();
+            using (var writer = new StreamWriter(memoryStream, Encoding.UTF8))
+            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+            {
+                await csv.WriteRecordsAsync(courses);
+                await writer.FlushAsync();
+
+                return File(memoryStream.ToArray(), "text/csv", "dados_inep_exportados.csv");
             }
         }
 
