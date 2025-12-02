@@ -97,14 +97,18 @@ namespace Api.Services
                 Bio: {student.Bio ?? "Não informado"}
                 Objetivo do Aluno: ""{specificGoal}""
 
-                Sua tarefa é gerar um plano de estudos e EXTRAIR informações chave do texto do aluno.
+                REGRAS DE VALIDAÇÃO (CRÍTICO):
+                1. Analise o texto em ""Objetivo do Aluno"".
+                2. Se o texto for aleatório (ex: ""asdfg"", ""teste""), não relacionado a estudos (ex: ""quero pizza"", ""futebol""), ofensivo ou sem sentido, VOCÊ DEVE RECUSAR.
+                3. Se for recusado, retorne o JSON com ""planTitle"": ""Objetivo Inválido"", ""motivation"": ""Por favor, informe um objetivo relacionado a estudos, carreira ou desenvolvimento acadêmico para que eu possa criar sua trilha."" e a lista de ""activities"" vazia.
+                4. Se for válido, gere o plano normalmente.
 
                 Responda ESTRITAMENTE com o seguinte formato JSON (sem markdown):
                 {{
                     ""planTitle"": ""Um título curto"",
                     ""motivation"": ""Texto motivacional curto"",
-                    ""suggestedCourse"": ""Um nome de curso superior exato e comum no Brasil (Ex: 'Administração', 'Direito', 'Sistemas de Informação') relacionado ao objetivo."",
-                    ""suggestedLocation"": ""Analise o texto do 'Objetivo do Aluno'. Se ele mencionou alguma Cidade ou Estado onde quer estudar (Ex: 'em Palmas', 'no Tocantins', 'em SP'), extraia APENAS o nome do local e coloque aqui. Se ele não mencionou local, deixe null."",
+                    ""suggestedCourse"": ""Um nome de curso superior exato e comum no Brasil (Ex: 'Administração', 'Direito', 'Sistemas de Informação') relacionado ao objetivo. Se o objetivo for inválido, deixe vazio."",
+                    ""suggestedLocation"": ""Analise o texto do 'Objetivo do Aluno'. Se ele mencionou alguma Cidade ou Estado onde quer estudar (Ex: 'em Palmas', 'no Tocantins', 'em SP'), extraia APENAS o nome do local e coloque aqui. Se ele não mencionou local ou o objetivo é inválido, deixe null."",
                     ""activities"": [
                         {{
                             ""title"": ""Nome da atividade"",
@@ -160,7 +164,7 @@ namespace Api.Services
 
             var responseString = await response.Content.ReadAsStringAsync();
             var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseString);
-
+            
             return geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text ?? "Continue seus estudos.";
         }
     }

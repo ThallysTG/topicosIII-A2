@@ -29,14 +29,16 @@ namespace Api.Controllers
             }
 
             var mentors = await query
-                .Select(u => new
-                {
-                    u.Id,
-                    u.Name,
-                    u.AreaInteresse,
-                    u.Bio,
-                    u.InepCode,
-                    IsLinked = _context.Mentorships.Any(m => m.MentorId == u.Id && m.StudentId == studentId && (m.Status == MentorshipStatus.Pendente || m.Status == MentorshipStatus.Ativa))
+                .Select(u => new 
+                { 
+                    u.Id, 
+                    u.Name, 
+                    u.AreaInteresse, 
+                    u.Bio, 
+                    MentorshipId = _context.Mentorships
+                        .Where(m => m.MentorId == u.Id && m.StudentId == studentId && (m.Status == MentorshipStatus.Pendente || m.Status == MentorshipStatus.Ativa))
+                        .Select(m => m.Id)
+                        .FirstOrDefault()
                 })
                 .ToListAsync();
 
@@ -65,6 +67,29 @@ namespace Api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok("Solicitação enviada com sucesso.");
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> UnlinkMentorship(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            var mentorship = await _context.Mentorships.FindAsync(id);
+
+            if (mentorship == null) return NotFound(new { Message = "Conexão não encontrada." });
+
+            bool isAuthorized = (userRole == "Aluno" && mentorship.StudentId == userId) || (userRole == "Mentor" && mentorship.MentorId == userId);
+
+            if (!isAuthorized)
+            {
+                return StatusCode(403, new { Message = "Você não tem permissão para desfazer esta conexão." });
+            }
+
+            _context.Mentorships.Remove(mentorship);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "Vínculo de mentoria encerrado com sucesso." });
         }
 
         [HttpGet("my-requests")]
@@ -115,7 +140,7 @@ namespace Api.Controllers
             var mentorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
             var students = await _context.Mentorships
-                .Where(m => m.MentorId == mentorId && m.Status == MentorshipStatus.Ativa) // Só ativos
+                .Where(m => m.MentorId == mentorId && m.Status == MentorshipStatus.Ativa)
                 .Select(m => new
                 {
                     m.Student.Id,
