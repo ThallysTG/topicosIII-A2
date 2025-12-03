@@ -66,6 +66,8 @@ namespace Api.Controllers
                     PasswordHash = passwordHash,
                     Role = model.Role,
                     AreaInteresse = model.AreaInteresse,
+                    City = model.City,
+                    State = model.State
                 };
 
                 _context.Users.Add(user);
