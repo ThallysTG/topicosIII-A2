@@ -1,0 +1,244 @@
+@using EduMentorClient.Services
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject UserState UserState
+@inject ISnackbar Snackbar
+
+@if (IsVisible)
+{
+    <div
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 animate-[fadeIn_0.2s] font-sans">
+
+        <div
+            class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-[scaleIn_0.2s]">
+
+            <div class="bg-[#0056D2] px-6 py-4 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-white">Nova Trilha Personalizada</h3>
+                <button @onclick="Close"
+                    class="text-white/80 hover:text-white transition p-1 rounded-full hover:bg-white/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto">
+
+                <div class="space-y-4 mb-4 flex flex-col h-full">
+
+                    <div>
+                        <input type="text" @bind="trackDto.Title" placeholder="Título da Trilha (Ex: Introdução ao SQL)"
+                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#0056D2] focus:border-transparent outline-none transition" />
+                    </div>
+
+                    <div class="flex-1 h-full">
+                        <textarea @bind="trackDto.Description"
+                            placeholder="Descrição / Motivação (Ex: Vamos focar em bancos de dados esta semana...)"
+                            class="w-full h-full block border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#0056D2] outline-none resize-none"></textarea>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-[#0056D2] mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Adicionar Atividades
+                    </label>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <input type="text" @bind="tempActivityTitle" placeholder="Título da Atividade"
+                            class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#0056D2] outline-none" />
+
+                        <div class="flex gap-2">
+                            <input type="text" @bind="tempActivityLink" placeholder="Link (Opcional)"
+                                class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#0056D2] outline-none" />
+
+                            <button @onclick="AddActivity"
+                                class="bg-[#0056D2] hover:bg-[#00419E] text-white p-2 rounded-lg transition shadow-sm flex-shrink-0"
+                                title="Adicionar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 min-h-[100px]">
+                    @if (!trackDto.Activities.Any())
+                    {
+                        <div class="text-center text-gray-400 text-sm py-4 flex flex-col items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2 opacity-50" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            Nenhuma atividade adicionada ainda.
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="space-y-2">
+                            @foreach (var act in trackDto.Activities)
+                            {
+                                <li
+                                    class="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-start shadow-sm">
+                                    <div>
+                                        <p class="font-bold text-sm text-gray-800">@act.Title</p>
+                                        @if (!string.IsNullOrEmpty(act.Link))
+                                        {
+                                            <a href="@act.Link" target="_blank"
+                                                class="text-xs text-[#0056D2] hover:underline truncate block max-w-[200px]">
+                                                @act.Link
+                                            </a>
+                                        }
+                                    </div>
+                                    <button @onclick="@(() => RemoveActivity(act))"
+                                        class="text-red-400 hover:text-red-600 transition p-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+
+            </div>
+
+            <div class="bg-gray-50 p-4 flex justify-end gap-3 border-t border-gray-100">
+                <button @onclick="Close"
+                    class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg text-sm font-medium transition">
+                    Cancelar
+                </button>
+                <button @onclick="Submit" disabled="@loading"
+                    class="px-6 py-2 bg-[#0056D2] text-white hover:bg-[#00419E] rounded-lg text-sm font-bold shadow-md transition disabled:opacity-50 flex items-center gap-2">
+                    @if (loading)
+                    {
+                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                    }
+                    Salvar Trilha
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int StudentId { get; set; }
+    [Parameter] public string StudentName { get; set; }
+    private bool loading = false;
+    private CreateManualTrackDto trackDto = new();
+    private string tempActivityTitle = "";
+    private string tempActivityLink = "";
+
+    private void Close()
+    {
+        IsVisible = false;
+        IsVisibleChanged.InvokeAsync(false);
+        trackDto = new();
+        tempActivityTitle = "";
+        tempActivityLink = "";
+    }
+
+    private void AddActivity()
+    {
+        if (string.IsNullOrWhiteSpace(tempActivityTitle))
+        {
+            Snackbar.Add("Digite um título para a atividade.", Severity.Warning);
+            return;
+        }
+
+        trackDto.Activities.Add(new ManualActivityDto
+        {
+            Title = tempActivityTitle,
+            Link = tempActivityLink,
+            Description = "Atividade recomendada pelo mentor"
+        });
+
+        tempActivityTitle = "";
+        tempActivityLink = "";
+    }
+
+    private void RemoveActivity(ManualActivityDto item)
+    {
+        trackDto.Activities.Remove(item);
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(trackDto.Title))
+        {
+            Snackbar.Add("O título é obrigatório.", Severity.Warning);
+            return;
+        }
+
+        if (!trackDto.Activities.Any())
+        {
+            Snackbar.Add("Adicione pelo menos uma atividade.", Severity.Warning);
+            return;
+        }
+
+        loading = true;
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, $"api/recommendation/create-manual/{StudentId}");
+            request.Content = JsonContent.Create(trackDto);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+
+            var response = await Http.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Trilha criada com sucesso!", Severity.Success);
+                Close();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Erro ao salvar: {response.StatusCode}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro de conexão: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    public class CreateManualTrackDto
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public List<ManualActivityDto> Activities { get; set; } = new();
+    }
+
+    public class ManualActivityDto
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Link { get; set; } = "";
+    }
+}

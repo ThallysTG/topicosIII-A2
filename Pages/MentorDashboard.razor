@@ -194,12 +194,14 @@
         }
     }
 </div>
+<Client.Shared.CreateTrackDialog @bind-IsVisible="showCreateTrackModal" StudentId="selectedStudentId" />
 
 @code {
     private bool loading = true;
     private int activeTab = 0;
+    private bool showCreateTrackModal = false;
+    private int selectedStudentId = 0;
     private List<MentorshipDto> allRequests = new();
-
     private List<MentorshipDto> pendingList => allRequests.Where(r => r.Status == 0).ToList();
     private List<MentorshipDto> activeList => allRequests.Where(r => r.Status == 1).ToList();
 
@@ -268,17 +270,10 @@
         Nav.NavigateTo($"/progress/{studentId}");
     }
 
-    private async Task OpenCreateTrackDialog(int studentId, string studentName)
+    private void OpenCreateTrackDialog(int studentId, string studentName)
     {
-        var parameters = new DialogParameters { ["StudentId"] = studentId };
-        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true };
-        var dialog = await _dialogService.ShowAsync<CreateTrackDialog>($"Criar Trilha para {studentName}", parameters, options);
-        var result = await dialog.Result;
-
-        if (result is not null && !result.Canceled)
-        {
-            Snackbar.Add("Trilha criada com sucesso!", Severity.Success);
-        }
+        selectedStudentId = studentId;
+        showCreateTrackModal = true;
     }
 
     public class MentorshipDto
