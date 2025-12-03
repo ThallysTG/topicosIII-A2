@@ -73,6 +73,22 @@
                         <option value="1">Eu sou mentor (Quero ensinar)</option>
                     </select>
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <input 
+                            type="text" @bind="model.City" 
+                            class="mt-1 focus:ring-[#0056D2] focus:border-[#0056D2] block w-full sm:text-sm border-gray-300 rounded-lg p-3 border transition" 
+                            placeholder="Cidade" 
+                        />
+                    </div>
+                    <div>
+                        <input 
+                            type="text" @bind="model.State" maxlength="2"
+                            class="mt-1 focus:ring-[#0056D2] focus:border-[#0056D2] block w-full sm:text-sm border-gray-300 rounded-lg p-3 border transition" 
+                            placeholder="Estado (UF)" 
+                        />
+                    </div>
+                </div>
                 <div>
                     <input 
                         id="area" type="text" @bind-value="model.AreaInteresse"
@@ -173,11 +189,13 @@
 
     public class RegisterDto
     {
-        public string Name { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Password { get; set; } = "";
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
         public int Role { get; set; }
-        public string AreaInteresse { get; set; } = "";
-        public string InepCode { get; set; } = "";
+        public string AreaInteresse { get; set; } = string.Empty;
+        public string InepCode { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string State { get; set; } = string.Empty;
     }
 }
