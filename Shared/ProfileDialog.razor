@@ -8,8 +8,7 @@
 
 @if (IsVisible)
 {
-    <div
-        class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 animate-[fadeIn_0.2s] font-sans">
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 animate-[fadeIn_0.2s] font-sans">
 
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-[scaleIn_0.2s]">
 
@@ -23,9 +22,7 @@
             </div>
 
             <div class="flex flex-col items-center -mt-10 relative z-10 px-6">
-
-                <div
-                    class="h-20 w-20 bg-white rounded-full flex items-center justify-center text-[#0056D2] font-bold text-3xl shadow-lg border-4 border-white">
+                <div class="h-20 w-20 bg-white rounded-full flex items-center justify-center text-[#0056D2] font-bold text-3xl shadow-lg border-4 border-white">
                     @(string.IsNullOrEmpty(model.Name) ? "?" : model.Name.Substring(0, 1).ToUpper())
                 </div>
 
@@ -59,8 +56,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Conta</label>
-                            <div
-                                class="bg-blue-50 text-[#0056D2] px-3 py-2.5 rounded-lg text-sm font-bold border border-blue-100">
+                            <div class="bg-blue-50 text-[#0056D2] px-3 py-2.5 rounded-lg text-sm font-bold border border-blue-100">
                                 @UserState.Role
                             </div>
                         </div>
@@ -68,6 +64,19 @@
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Área de Interesse</label>
                             <input type="text" @bind="model.AreaInteresse"
                                 class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#0056D2] outline-none" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cidade</label>
+                            <input type="text" @bind="model.City" placeholder="Ex: Palmas"
+                                class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#0056D2] outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Estado (UF)</label>
+                            <input type="text" @bind="model.State" maxlength="2" placeholder="Ex: TO"
+                                class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-[#0056D2] outline-none uppercase" />
                         </div>
                     </div>
 
@@ -146,6 +155,8 @@
                     model.AreaInteresse = user.AreaInteresse ?? "";
                     model.Bio = user.Bio ?? "";
                     userEmail = user.Email ?? "";
+                    model.City = user.City ?? "";
+                    model.State = user.State ?? "";
                 }
             }
         }
@@ -168,7 +179,6 @@
             {
                 Snackbar.Add("Perfil atualizado!", Severity.Success);
 
-                // Atualiza o estado global
                 UserState.UserName = model.Name;
                 await LocalStorage.SetItemAsync("userName", model.Name);
                 UserState.NotifyStateChanged();
@@ -189,6 +199,8 @@
         public string Name { get; set; } = string.Empty;
         public string AreaInteresse { get; set; } = string.Empty;
         public string Bio { get; set; } = string.Empty;
+        public string City { get; set; } = "";
+        public string State { get; set; } = "";
     }
 
     public class FullUserDto
@@ -199,5 +211,7 @@
         public string Role { get; set; } = string.Empty;
         public string AreaInteresse { get; set; } = string.Empty;
         public string Bio { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string State { get; set; } = string.Empty;
     }
 }
