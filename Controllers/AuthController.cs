@@ -110,7 +110,9 @@ namespace Api.Controllers
                     Role = user.Role.ToString(),
                     AreaInteresse = user.AreaInteresse,
                     Bio = user.Bio,
-                    IsAuthenticated = true
+                    City = user.City,
+                    State = user.State,
+                    IsAuthenticated = true,
                 });
             }
             catch (Exception)
@@ -131,6 +133,8 @@ namespace Api.Controllers
             user.Name = model.Name;
             user.AreaInteresse = model.AreaInteresse;
             user.Bio = model.Bio;
+            user.City = model.City;
+            user.State = model.State;
 
             await _context.SaveChangesAsync();
             return Ok(new { Message = "Perfil atualizado com sucesso." });

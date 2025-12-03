@@ -96,29 +96,34 @@ namespace Api.Services
 
             return $@"
                 Atue como um mentor acadêmico especialista chamado EduMentor.
-                Analise o seguinte perfil e objetivo do aluno:
                 
-                Nome: {student.Name}
-                Localização do Perfil: {userLocation}
-                Área de Interesse: {student.AreaInteresse ?? "Geral"}
-                Bio: {student.Bio ?? "Não informado"}
+                CONTEXTO DO USUÁRIO:
+                - Nome: {student.Name}
+                - Localização de Cadastro: {userLocation}
+                - Área de Interesse: {student.AreaInteresse ?? "Geral"}
                 
-                Objetivo do Aluno: ""{specificGoal}""
+                INPUT DO USUÁRIO (OBJETIVO): 
+                ""{specificGoal}""
+
+                REGRAS DE EXTRAÇÃO DE LOCAL (PRIORIDADE MÁXIMA):
+                1. Analise o 'INPUT DO USUÁRIO' procurando por intenção geográfica explícita.
+                2. Procure por termos como ""em X"", ""no estado de Y"", ""na cidade de Z"", ""em SP"", ""no Tocantins"".
+                3. Se o usuário mencionar EXPLICITAMENTE um local no texto, extraia APENAS o nome desse local (Ex: Se ele digitar ""no estado de São Paulo"", retorne ""São Paulo"").
+                4. Se o usuário NÃO mencionar local no texto, retorne null (o sistema usará a localização de cadastro automaticamente).
 
                 REGRAS DE VALIDAÇÃO (CRÍTICO):
-                1. Analise o texto em ""Objetivo do Aluno"".
-                2. Se o texto for aleatório, ofensivo ou sem sentido acadêmico, RECUSE conforme regra abaixo.
-                3. Se recusado: retorne JSON com ""planTitle"": ""Objetivo Inválido"" e ""activities"": [].
-                4. Se válido: gere o plano.
+                1. Analise se o texto é aleatório (ex: ""asdfg""), ofensivo, sobre culinária/esportes não acadêmicos ou sem sentido.
+                2. Se for inválido, retorne o JSON com ""planTitle"": ""Objetivo Inválido"", ""motivation"": ""Por favor, informe um objetivo relacionado a estudos, carreira ou desenvolvimento acadêmico para que eu possa criar sua trilha."" e a lista de ""activities"" vazia.
+                3. Se for válido, gere o plano.
 
                 Responda ESTRITAMENTE com o seguinte formato JSON (sem markdown):
                 {{
                     ""planTitle"": ""Um título curto"",
-                    ""motivation"": ""Texto motivacional curto citando a cidade do aluno se possível."",
+                    ""motivation"": ""Texto motivacional curto."",
                     
-                    ""suggestedCourse"": ""Nome do curso superior exato (Ex: 'Sistemas de Informação')."",
+                    ""suggestedCourse"": ""Nome do curso superior exato e comum no Brasil (Ex: 'Sistemas de Informação', 'Direito')."",
                     
-                    ""suggestedLocation"": ""Regra de Prioridade: 1. Se o aluno escreveu uma cidade no 'Objetivo', use ela. 2. Se NÃO escreveu, use a 'Localização do Perfil' fornecida acima. 3. Se ambos vazios, retorne null."",
+                    ""suggestedLocation"": ""O local que você extraiu do texto do aluno. Se não houver menção de local no texto, deve ser null."",
                     
                     ""activities"": [
                         {{
