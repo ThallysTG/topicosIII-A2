@@ -88,27 +88,38 @@ namespace Api.Services
 
         private string GeneratePrompt(User student, string specificGoal)
         {
+            string userLocation = "Não informada";
+            if (!string.IsNullOrEmpty(student.City))
+            {
+                userLocation = $"{student.City} - {student.State}";
+            }
+
             return $@"
                 Atue como um mentor acadêmico especialista chamado EduMentor.
                 Analise o seguinte perfil e objetivo do aluno:
                 
                 Nome: {student.Name}
+                Localização do Perfil: {userLocation}
                 Área de Interesse: {student.AreaInteresse ?? "Geral"}
                 Bio: {student.Bio ?? "Não informado"}
+                
                 Objetivo do Aluno: ""{specificGoal}""
 
                 REGRAS DE VALIDAÇÃO (CRÍTICO):
                 1. Analise o texto em ""Objetivo do Aluno"".
-                2. Se o texto for aleatório (ex: ""asdfg"", ""teste""), não relacionado a estudos (ex: ""quero pizza"", ""futebol""), ofensivo ou sem sentido, VOCÊ DEVE RECUSAR.
-                3. Se for recusado, retorne o JSON com ""planTitle"": ""Objetivo Inválido"", ""motivation"": ""Por favor, informe um objetivo relacionado a estudos, carreira ou desenvolvimento acadêmico para que eu possa criar sua trilha."" e a lista de ""activities"" vazia.
-                4. Se for válido, gere o plano normalmente.
+                2. Se o texto for aleatório, ofensivo ou sem sentido acadêmico, RECUSE conforme regra abaixo.
+                3. Se recusado: retorne JSON com ""planTitle"": ""Objetivo Inválido"" e ""activities"": [].
+                4. Se válido: gere o plano.
 
                 Responda ESTRITAMENTE com o seguinte formato JSON (sem markdown):
                 {{
                     ""planTitle"": ""Um título curto"",
-                    ""motivation"": ""Texto motivacional curto"",
-                    ""suggestedCourse"": ""Um nome de curso superior exato e comum no Brasil (Ex: 'Administração', 'Direito', 'Sistemas de Informação') relacionado ao objetivo. Se o objetivo for inválido, deixe vazio."",
-                    ""suggestedLocation"": ""Analise o texto do 'Objetivo do Aluno'. Se ele mencionou alguma Cidade ou Estado onde quer estudar (Ex: 'em Palmas', 'no Tocantins', 'em SP'), extraia APENAS o nome do local e coloque aqui. Se ele não mencionou local ou o objetivo é inválido, deixe null."",
+                    ""motivation"": ""Texto motivacional curto citando a cidade do aluno se possível."",
+                    
+                    ""suggestedCourse"": ""Nome do curso superior exato (Ex: 'Sistemas de Informação')."",
+                    
+                    ""suggestedLocation"": ""Regra de Prioridade: 1. Se o aluno escreveu uma cidade no 'Objetivo', use ela. 2. Se NÃO escreveu, use a 'Localização do Perfil' fornecida acima. 3. Se ambos vazios, retorne null."",
+                    
                     ""activities"": [
                         {{
                             ""title"": ""Nome da atividade"",
@@ -164,7 +175,7 @@ namespace Api.Services
 
             var responseString = await response.Content.ReadAsStringAsync();
             var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseString);
-            
+
             return geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text ?? "Continue seus estudos.";
         }
     }

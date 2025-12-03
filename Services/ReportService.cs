@@ -23,7 +23,6 @@ namespace Api.Services
         {
             var student = await _context.Users.FindAsync(studentId) ?? throw new Exception("Aluno não encontrado");
 
-            // 1. Buscar Trilhas
             var tracksQuery = _context.StudyTracks
                 .Include(t => t.StudyActivities)
                 .Where(t => t.StudentUserId == studentId);
@@ -35,7 +34,6 @@ namespace Api.Services
 
             var tracks = await tracksQuery.ToListAsync();
 
-            // 2. Buscar Sessões
             var sessionsQuery = _context.MentoringSessions
                 .Where(s => s.StudentUserId == studentId);
 
@@ -46,17 +44,13 @@ namespace Api.Services
 
             var sessions = await sessionsQuery.ToListAsync();
 
-            // 3. Dados Gerais
             var allActivities = tracks.SelectMany(t => t.StudyActivities).ToList();
             int totalActs = allActivities.Count;
             int completedActs = allActivities.Count(a => a.ActivityStatus == ActivityStatus.Concluida);
 
-            // --- 4. CÁLCULO DAS MÉTRICAS TEMPORAIS (NOVO) ---
-            
-            // Filtra apenas atividades concluídas que possuem data
             var completedWithDates = allActivities
                 .Where(a => a.ActivityStatus == ActivityStatus.Concluida && a.CompletedAt.HasValue)
-                .OrderBy(a => a.CompletedAt) // Ordena cronologicamente
+                .OrderBy(a => a.CompletedAt)
                 .ToList();
 
             double avgDays = 0;
@@ -66,7 +60,6 @@ namespace Api.Services
             {
                 var gaps = new List<double>();
                 
-                // Percorre a lista calculando a diferença entre a tarefa atual e a anterior
                 for (int i = 1; i < completedWithDates.Count; i++)
                 {
                     var diff = (completedWithDates[i].CompletedAt!.Value - completedWithDates[i - 1].CompletedAt!.Value).TotalDays;
@@ -75,16 +68,12 @@ namespace Api.Services
                     if (diff > maxGap) maxGap = (int)diff;
                 }
                 
-                // Calcula a média se houver gaps
                 if (gaps.Any()) avgDays = gaps.Average();
             }
             else if (completedWithDates.Count == 1)
             {
-                // Se fez apenas uma, consideramos consistência inicial perfeita ou zero gaps
                 avgDays = 0; 
             }
-
-            // ------------------------------------------------
 
             return new StudentProgressDto
             {
@@ -97,7 +86,6 @@ namespace Api.Services
                 TotalMentoringSessions = sessions.Count,
                 CompletedMentoringSessions = sessions.Count(s => s.SessionStatus == SessionStatus.Concluida),
 
-                // Passando as métricas calculadas para o DTO
                 AverageDaysBetweenTasks = avgDays,
                 MaxGapInDays = maxGap,
                 LastActivityDate = completedWithDates.LastOrDefault()?.CompletedAt,

@@ -36,12 +36,31 @@ namespace Api.Controllers
             {
                 var aiResponse = await _geminiService.GetStudyRecommendationAsync(student, request.SpecificGoal);
 
+                if (aiResponse.Activities == null || !aiResponse.Activities.Any())
+                {
+                    return Ok(new
+                    {
+                        AiPlan = aiResponse,
+                        InepOptions = new List<InepCourse>()
+                    });
+                }
+
+                string? locationFilter = aiResponse.SuggestedLocation;
+
+                if (string.IsNullOrWhiteSpace(locationFilter) && !string.IsNullOrWhiteSpace(student.City))
+                {
+                    locationFilter = $"{student.City}";
+                    if (!string.IsNullOrWhiteSpace(student.State)) locationFilter += $" - {student.State}";
+
+                    aiResponse.SuggestedLocation = locationFilter;
+                }
+
                 var coursesFound = new List<InepCourse>();
                 if (!string.IsNullOrEmpty(aiResponse.SuggestedCourse))
                 {
                     coursesFound = await _inepService.SearchCoursesAsync(
                         aiResponse.SuggestedCourse,
-                        aiResponse.SuggestedLocation
+                        locationFilter
                     );
                 }
 
@@ -83,7 +102,7 @@ namespace Api.Controllers
                 var log = new RecommendationLog
                 {
                     StudentUserId = student.Id,
-                    PromptSent = $"Objetivo: {request.SpecificGoal}",
+                    PromptSent = $"Objetivo: {request.SpecificGoal} | Local: {locationFilter}",
                     ResponseSummary = JsonSerializer.Serialize(aiResponse),
                     CreatedAt = DateTime.UtcNow
                 };
@@ -114,7 +133,7 @@ namespace Api.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erro: {ex.Message}");
+                return StatusCode(500, $"Erro interno ao gerar recomendação: {ex.Message}");
             }
         }
 

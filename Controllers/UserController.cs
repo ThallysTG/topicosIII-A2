@@ -27,7 +27,8 @@ namespace Api.Controllers
                     Email = u.Email,
                     Role = u.Role.ToString(),
                     AreaInteresse = u.AreaInteresse,
-                    InepCode = u.InepCode
+                    City = u.City,
+                    State = u.State
                 })
                 .ToListAsync();
 
@@ -48,7 +49,8 @@ namespace Api.Controllers
                 Email = user.Email,
                 Role = user.Role.ToString(),
                 AreaInteresse = user.AreaInteresse,
-                InepCode = user.InepCode
+                City = user.City,
+                State = user.State
             });
         }
 
@@ -69,7 +71,8 @@ namespace Api.Controllers
                 PasswordHash = passwordHash,
                 Role = model.Role,
                 AreaInteresse = model.AreaInteresse,
-                InepCode = model.InepCode
+                City = model.City,
+                State = model.State
             };
 
             _context.Users.Add(newUser);
@@ -77,36 +80,6 @@ namespace Api.Controllers
 
             return StatusCode(201, new { Message = "Usuário criado com sucesso.", UserId = newUser.Id });
         }
-
-        /* [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto model)
-        {
-            var user = await _context.Users.FindAsync(id);
-
-            if (user == null) return NotFound(new { Message = "Usuário não encontrado." });
-
-            if (model.Email != user.Email && await _context.Users.AnyAsync(u => u.Email == model.Email))
-            {
-                return BadRequest(new { Message = "Este e-mail já está em uso por outro usuário." });
-            }
-
-            user.Name = model.Name;
-            user.Email = model.Email;
-            user.Role = model.Role;
-            user.AreaInteresse = model.AreaInteresse;
-            user.InepCode = model.InepCode;
-            user.Bio = model.Bio;
-
-            if (!string.IsNullOrEmpty(model.Password))
-            {
-                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
-            }
-
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { Message = "Usuário atualizado com sucesso." });
-        } */
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> ForceDeleteUser(int id)

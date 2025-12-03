@@ -10,7 +10,8 @@ namespace Api.Dtos
         public string Email { get; set; }
         public string Role { get; set; }
         public string? AreaInteresse { get; set; }
-        public string? InepCode { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
     }
 
     public class CreateUserDto
@@ -23,7 +24,8 @@ namespace Api.Dtos
         public string Password { get; set; }
         public UserRole Role { get; set; }
         public string? AreaInteresse { get; set; }
-        public string? InepCode { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
     }
 
     public class UpdateUserDto
@@ -34,7 +36,8 @@ namespace Api.Dtos
         public string? Password { get; set; } 
         public UserRole Role { get; set; }
         public string? AreaInteresse { get; set; }
-        public string? InepCode { get; set; }
         public string? Bio { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
     }
 }

@@ -66,7 +66,6 @@ namespace Api.Controllers
                     PasswordHash = passwordHash,
                     Role = model.Role,
                     AreaInteresse = model.AreaInteresse,
-                    InepCode = model.InepCode
                 };
 
                 _context.Users.Add(user);

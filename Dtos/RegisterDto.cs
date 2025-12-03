@@ -7,6 +7,7 @@ namespace Api.Models
         public string Password { get; set; }
         public UserRole Role { get; set; }
         public string? AreaInteresse { get; set; }
-        public string? InepCode { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
     }
 }
