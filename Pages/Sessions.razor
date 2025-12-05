@@ -1,6 +1,7 @@
 @page "/sessions"
 @using EduMentorClient.Services
 @using System.Net.Http.Headers
+@using System.Text.Json 
 @inject HttpClient Http
 @inject UserState UserState
 @inject NavigationManager Nav
@@ -9,21 +10,18 @@
 <PageTitle>Sessões de Mentoria</PageTitle>
 
 <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-
+    
     <div class="flex justify-between items-center mb-8">
         <div>
             <h1 class="text-3xl font-extrabold text-[#0056D2]">Minhas Sessões</h1>
             <p class="mt-1 text-gray-600">Agenda de reuniões e feedbacks.</p>
         </div>
-
+        
         @if (UserState.Role == "Mentor")
         {
-            <button @onclick="() => showCreateModal = true"
-                class="bg-[#0056D2] hover:bg-[#00419E] text-white px-4 py-2 rounded-lg font-bold shadow transition flex items-center gap-2">
+            <button @onclick="() => showCreateModal = true" class="bg-[#0056D2] hover:bg-[#00419E] text-white px-4 py-2 rounded-lg font-bold shadow transition flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                        clip-rule="evenodd" />
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                 </svg>
                 Agendar Nova
             </button>
@@ -33,40 +31,33 @@
     @if (loading)
     {
         <div class="flex justify-center mt-12">
-            <svg class="animate-spin h-10 w-10 text-[#0056D2]" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24">
+            <svg class="animate-spin h-10 w-10 text-[#0056D2]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                </path>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
         </div>
     }
-    else if (!sessions.Any())
+    else if (pagedResult?.Items == null || !pagedResult.Items.Any())
     {
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <p class="mt-2 text-gray-500">Nenhuma sessão agendada.</p>
         </div>
     }
     else
     {
-        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            @foreach (var session in sessions)
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+            @foreach (var session in pagedResult.Items)
             {
-                <div
-                    class="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col">
+                <div class="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col">
 
                     <div class="p-4 flex justify-between items-start">
                         <div class="flex items-center gap-3">
-                            <div
-                                class="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+                            <div class="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
                                 <span class="text-[#0056D2] font-bold text-lg">
-                                    @(string.IsNullOrEmpty(session.OtherPartyName) ? "?" : session.OtherPartyName.Substring(0,
-                                                                1).ToUpper())
+                                    @(string.IsNullOrEmpty(session.OtherPartyName) ? "?" : session.OtherPartyName.Substring(0, 1).ToUpper())
                                 </span>
                             </div>
 
@@ -80,19 +71,16 @@
                             </div>
                         </div>
 
-                        <span
-                            class="@GetStatusColor(session.Status) px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-opacity-20 shadow-sm">
+                        <span class="@GetStatusColor(session.Status) px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-opacity-20 shadow-sm">
                             @session.Status
                         </span>
                     </div>
 
                     <div class="px-4 pb-4 flex-grow">
-                        <div
-                            class="flex items-center p-3 bg-gray-50 rounded-xl border border-gray-100 group-hover:border-blue-100 transition-colors">
+                        <div class="flex items-center p-3 bg-gray-50 rounded-xl border border-gray-100 group-hover:border-blue-100 transition-colors">
                             <div class="p-2 bg-white rounded-lg shadow-sm mr-3 text-[#0056D2]">
                                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
                             <div class="flex flex-col">
@@ -105,12 +93,9 @@
 
                         @if (!string.IsNullOrEmpty(session.Notes))
                         {
-                            <div
-                                class="mt-4 bg-yellow-50 p-3 rounded-xl border border-yellow-100 text-xs text-yellow-800 flex items-start gap-2">
-                                <svg class="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                            <div class="mt-4 bg-yellow-50 p-3 rounded-xl border border-yellow-100 text-xs text-yellow-800 flex items-start gap-2">
+                                <svg class="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                                 </svg>
                                 <span>
                                     <strong class="font-bold block text-yellow-900 mb-1">Feedback:</strong>
@@ -123,15 +108,13 @@
                     <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-end gap-3 items-center">
                         @if (session.Status == "Agendada")
                         {
-                            <button @onclick="() => CancelSession(session.Id)"
-                                class="text-red-600 hover:text-red-700 text-xs font-bold uppercase tracking-wider py-2 px-3 rounded hover:bg-red-50 transition">
+                            <button @onclick="() => CancelSession(session.Id)" class="text-red-600 hover:text-red-700 text-xs font-bold uppercase tracking-wider py-2 px-3 rounded hover:bg-red-50 transition">
                                 Cancelar
                             </button>
-
+                            
                             @if (UserState.Role == "Mentor")
                             {
-                                <button @onclick="() => OpenFeedbackModal(session)"
-                                    class="bg-[#0056D2] hover:bg-[#00419E] text-white text-xs font-bold uppercase tracking-wider py-2 px-4 rounded-lg shadow-sm hover:shadow transition flex items-center gap-2">
+                                <button @onclick="() => OpenFeedbackModal(session)" class="bg-[#0056D2] hover:bg-[#00419E] text-white text-xs font-bold uppercase tracking-wider py-2 px-4 rounded-lg shadow-sm hover:shadow transition flex items-center gap-2">
                                     <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                     </svg>
@@ -147,39 +130,51 @@
                 </div>
             }
         </div>
+
+        <div class="flex justify-center items-center mt-10 gap-4 pb-8">
+            <button @onclick="PreviousPage" disabled="@(!pagedResult.HasPrevious)"
+                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                Anterior
+            </button>
+            
+            <span class="text-sm text-gray-600 font-medium">
+                Página @pagedResult.CurrentPage de @pagedResult.TotalPages
+            </span>
+
+            <button @onclick="NextPage" disabled="@(!pagedResult.HasNext)"
+                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                Próxima
+            </button>
+        </div>
     }
 </div>
 
 @if (showCreateModal)
 {
     <div class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-xl max-w-md w-full p-6 animate-[fadeIn_0.2s_ease-out]">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-[fadeIn_0.2s]">
             <h3 class="text-xl font-bold text-gray-900 mb-4">Agendar Mentoria</h3>
-
+            
             <label class="block text-sm font-medium text-gray-700 mb-1">Aluno</label>
-            <select @bind="newSessionStudentId"
-                class="w-full border border-gray-300 rounded-lg p-2.5 mb-4 bg-white focus:ring-[#0056D2] focus:border-[#0056D2] outline-none">
+            <select @bind="newSessionStudentId" class="w-full border border-gray-300 rounded-lg p-2.5 mb-4 bg-white focus:ring-[#0056D2] focus:border-[#0056D2] outline-none">
                 <option value="0" disabled selected>Selecione um aluno...</option>
                 @foreach (var student in myStudents)
                 {
                     <option value="@student.Id">@student.Name</option>
                 }
             </select>
-
+            
             @if (!myStudents.Any())
             {
                 <p class="text-xs text-red-500 mb-4">Você ainda não tem alunos ativos para agendar.</p>
             }
 
             <label class="block text-sm font-medium text-gray-700 mb-1">Data e Hora</label>
-            <input type="datetime-local" @bind="newSessionDate"
-                class="w-full border border-gray-300 rounded-lg p-2.5 mb-6 focus:ring-[#0056D2] focus:border-[#0056D2] outline-none" />
+            <input type="datetime-local" @bind="newSessionDate" class="w-full border border-gray-300 rounded-lg p-2.5 mb-6 focus:ring-[#0056D2] focus:border-[#0056D2] outline-none" />
 
             <div class="flex justify-end gap-3">
-                <button @onclick="() => showCreateModal = false"
-                    class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
-                <button @onclick="CreateSession" disabled="@(newSessionStudentId == 0)"
-                    class="px-4 py-2 bg-[#0056D2] text-white rounded-lg font-medium hover:bg-[#00419E] transition disabled:opacity-50 disabled:cursor-not-allowed">Agendar</button>
+                <button @onclick="() => showCreateModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
+                <button @onclick="CreateSession" disabled="@(newSessionStudentId == 0)" class="px-4 py-2 bg-[#0056D2] text-white rounded-lg font-medium hover:bg-[#00419E] transition disabled:opacity-50 disabled:cursor-not-allowed">Agendar</button>
             </div>
         </div>
     </div>
@@ -188,19 +183,15 @@
 @if (showFeedbackModal)
 {
     <div class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-[fadeIn_0.2s_ease-out]">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-[fadeIn_0.2s]">
             <h3 class="text-xl font-bold text-gray-900 mb-4">Finalizar Sessão</h3>
-
+            
             <label class="block text-sm font-medium text-gray-700 mb-1">Notas / Feedback</label>
-            <textarea @bind="feedbackText" rows="4"
-                class="w-full border border-gray-300 rounded-lg p-2.5 mb-6 focus:ring-[#0056D2] focus:border-[#0056D2] outline-none"
-                placeholder="O que foi discutido?"></textarea>
+            <textarea @bind="feedbackText" rows="4" class="w-full border border-gray-300 rounded-lg p-2.5 mb-6 focus:ring-[#0056D2] focus:border-[#0056D2] outline-none" placeholder="O que foi discutido?"></textarea>
 
             <div class="flex justify-end gap-3">
-                <button @onclick="() => showFeedbackModal = false"
-                    class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
-                <button @onclick="SubmitFeedback"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition">Concluir</button>
+                <button @onclick="() => showFeedbackModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
+                <button @onclick="SubmitFeedback" class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition">Concluir</button>
             </div>
         </div>
     </div>
@@ -208,15 +199,20 @@
 
 @code {
     private bool loading = true;
-    private List<SessionDto> sessions = new();
-    private List<StudentSelectDto> myStudents = new();
+    private PagedResult<SessionDto>? pagedResult;
+    
+    // Paginação
+    private int currentPage = 1;
+    private int pageSize = 9;
 
+    private List<StudentSelectDto> myStudents = new();
+    
     private bool showCreateModal = false;
     private bool showFeedbackModal = false;
-
+    
     private int newSessionStudentId;
     private DateTime newSessionDate = DateTime.Now.AddDays(1);
-
+    
     private int selectedSessionId;
     private string feedbackText = "";
 
@@ -232,14 +228,36 @@
         loading = true;
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, "api/session");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"api/session?page={currentPage}&pageSize={pageSize}");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
+            
             var response = await Http.SendAsync(request);
             if (response.IsSuccessStatusCode)
-                sessions = await response.Content.ReadFromJsonAsync<List<SessionDto>>() ?? new();
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                pagedResult = await response.Content.ReadFromJsonAsync<PagedResult<SessionDto>>(options);
+            }
         }
         catch { Snackbar.Add("Erro ao carregar sessões.", Severity.Error); }
         finally { loading = false; }
+    }
+
+    private async Task NextPage()
+    {
+        if (pagedResult != null && pagedResult.HasNext)
+        {
+            currentPage++;
+            await LoadSessions();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (pagedResult != null && pagedResult.HasPrevious)
+        {
+            currentPage--;
+            await LoadSessions();
+        }
     }
 
     private async Task LoadMyStudents()
@@ -251,7 +269,7 @@
                 var request = new HttpRequestMessage(HttpMethod.Get, "api/mentorship/my-students");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", UserState.Token);
                 var response = await Http.SendAsync(request);
-
+                
                 if (response.IsSuccessStatusCode)
                 {
                     myStudents = await response.Content.ReadFromJsonAsync<List<StudentSelectDto>>() ?? new();
@@ -273,7 +291,7 @@
             var response = await Http.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
-                Snackbar.Add("Sessão agendada com sucesso!", Severity.Success);
+                Snackbar.Add("Agendado!", Severity.Success);
                 showCreateModal = false;
                 await LoadSessions();
             }
@@ -301,7 +319,7 @@
                 await LoadSessions();
             }
         }
-        catch { Snackbar.Add("Erro ao enviar feedback", Severity.Error); }
+        catch { Snackbar.Add("Erro", Severity.Error); }
     }
 
     private async Task CancelSession(int id)
@@ -320,18 +338,30 @@
         _ => "bg-gray-100 text-gray-800"
     };
 
+    // DTOs
+    public class PagedResult<T>
+    {
+        public List<T> Items { get; set; } = new();
+        public int TotalCount { get; set; }
+        public int CurrentPage { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+        public bool HasNext => CurrentPage < TotalPages;
+        public bool HasPrevious => CurrentPage > 1;
+    }
+
     public class SessionDto
     {
         public int Id { get; set; }
-        public string OtherPartyName { get; set; } = string.Empty;
+        public string OtherPartyName { get; set; }
         public DateTime ScheduledAt { get; set; }
-        public string Status { get; set; } = string.Empty;
-        public string Notes { get; set; } = string.Empty;
+        public string Status { get; set; }
+        public string Notes { get; set; }
     }
 
     public class StudentSelectDto
     {
         public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
+        public string Name { get; set; }
     }
 }
