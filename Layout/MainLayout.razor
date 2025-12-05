@@ -2,15 +2,23 @@
 @inject NavigationManager Nav
 @using EduMentorClient.Services
 @inject UserState UserState
+@inject IJSRuntime JS 
 
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<div class="min-h-screen bg-[#F5F7FA] font-sans text-[#1F1F1F] flex flex-col">
+<div class="min-h-screen bg-[#F5F7FA] font-sans text-[#1F1F1F] flex flex-col relative">
     @if (UserState.IsLoggedIn)
     {
-        <aside class="@(_sidebarOpen ? "w-64 translate-x-0" : "w-0 -translate-x-full") fixed top-0 left-0 z-50 h-screen bg-white shadow-2xl transition-all duration-300 ease-in-out overflow-y-auto overflow-x-hidden border-r border-gray-200">
+        @if (_sidebarOpen)
+        {
+            <div class="fixed inset-0 bg-gray-900/50 z-40 transition-opacity backdrop-blur-sm md:hidden" 
+                 @onclick="ToggleSidebar">
+            </div>
+        }
+
+        <aside class="@(_sidebarOpen ? "translate-x-0" : "-translate-x-full") w-64 fixed top-0 left-0 z-50 h-screen bg-white shadow-2xl transition-transform duration-300 ease-in-out overflow-y-auto overflow-x-hidden border-r border-gray-200">
             <div class="flex flex-col h-full">
 
                 <div class="h-16 flex items-center px-6 border-b border-gray-100 bg-white flex-shrink-0">
@@ -20,7 +28,7 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col p-4 space-y-2 w-64 flex-grow">
+                <div class="flex flex-col p-4 space-y-2 w-64 flex-grow" @onclick="CloseOnMobile">
                     @if (UserState.Role == "Aluno")
                     {
                         <NavLink href="/" Match="NavLinkMatch.All"
@@ -89,7 +97,7 @@
         </aside>
     }
 
-    <header class="@(UserState.IsLoggedIn && _sidebarOpen ? "ml-64" : "ml-0") bg-[#0056D2] text-white shadow-md z-10 flex-shrink-0 h-16 transition-all duration-300 ease-in-out">
+    <header class="@(UserState.IsLoggedIn && _sidebarOpen ? "md:ml-64" : "ml-0") bg-[#0056D2] text-white shadow-md z-10 flex-shrink-0 h-16 transition-all duration-300 ease-in-out">
         <div class="flex items-center justify-between px-4 h-full">
 
             <div class="flex items-center gap-4">
@@ -164,13 +172,13 @@
         </div>
     </header>
 
-    <main class="@(UserState.IsLoggedIn && _sidebarOpen ? "ml-64" : "ml-0") flex-grow pt-4 transition-all duration-300 bg-[#F5F7FA]">
+    <main class="@(UserState.IsLoggedIn && _sidebarOpen ? "md:ml-64" : "ml-0") flex-grow pt-4 transition-all duration-300 bg-[#F5F7FA]">
         <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             @Body
         </div>
     </main>
 
-    <footer class="@(UserState.IsLoggedIn && _sidebarOpen ? "ml-64" : "ml-0") mt-auto py-4 transition-all duration-300">
+    <footer class="@(UserState.IsLoggedIn && _sidebarOpen ? "md:ml-64" : "ml-0") mt-auto py-4 transition-all duration-300">
         <div class="max-w-7xl space-y-2 mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-between items-center">
             <div class="text-gray-500 text-sm">&copy; 2025 <b>EduMentor AI</b> - Unitins/TO</div>
             <div class="text-gray-400 text-xs">Powered by Gemini & INEP</div>
@@ -194,6 +202,26 @@
     public void Dispose()
     {
         UserState.OnChange -= StateHasChanged;
+    }
+
+    private async Task CloseOnMobile()
+    {
+        if (_sidebarOpen)
+        {
+            try 
+            {
+                var isMobile = await JS.InvokeAsync<bool>("eval", "window.innerWidth < 768");
+                if (isMobile)
+                {
+                    _sidebarOpen = false;
+                    StateHasChanged();
+                }
+            }
+            catch 
+            {
+               
+            }
+        }
     }
 
     private void OpenProfileModal()
