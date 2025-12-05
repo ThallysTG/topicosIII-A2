@@ -16,10 +16,16 @@ namespace Api.Controllers
         private readonly ApplicationDbContext _context = context;
 
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var users = await _context.Users
-                .AsNoTracking()
+            var query = _context.Users.AsNoTracking();
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(u => u.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(u => new UserResponseDto
                 {
                     Id = u.Id,
@@ -32,7 +38,15 @@ namespace Api.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(users);
+            var result = new PagedResult<UserResponseDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                CurrentPage = page,
+                PageSize = pageSize
+            };
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
