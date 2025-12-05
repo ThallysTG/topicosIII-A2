@@ -16,7 +16,7 @@ namespace Api.Controllers
         private readonly ApplicationDbContext _context = context;
 
         [HttpGet]
-        public async Task<IActionResult> GetMySessions()
+        public async Task<IActionResult> GetMySessions([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -34,7 +34,13 @@ namespace Api.Controllers
                              .Include(s => s.MentorUser);
             }
 
-            var sessions = await query.OrderByDescending(s => s.ScheduledAt).ToListAsync();
+            var totalCount = await query.CountAsync();
+
+            var sessions = await query
+                .OrderByDescending(s => s.ScheduledAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             var dtos = sessions.Select(s => new SessionResponseDto
             {
@@ -45,9 +51,15 @@ namespace Api.Controllers
                 ScheduledAt = s.ScheduledAt,
                 Status = s.SessionStatus.ToString(),
                 Notes = s.NotesMentor
-            });
+            }).ToList();
 
-            return Ok(dtos);
+            return Ok(new PagedResult<SessionResponseDto>
+            {
+                Items = dtos,
+                TotalCount = totalCount,
+                CurrentPage = page,
+                PageSize = pageSize
+            });
         }
 
         [HttpPost]

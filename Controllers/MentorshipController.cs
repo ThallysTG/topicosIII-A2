@@ -1,4 +1,5 @@
 using Api.Data;
+using Api.Dtos;
 using Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +16,7 @@ namespace Api.Controllers
         private readonly ApplicationDbContext _context = context;
 
         [HttpGet("mentors")]
-        public async Task<IActionResult> GetMentors([FromQuery] string? area)
+        public async Task<IActionResult> GetMentors([FromQuery] string? area, [FromQuery] int page = 1, [FromQuery] int pageSize = 9)
         {
             var studentId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
@@ -28,7 +29,12 @@ namespace Api.Controllers
                 query = query.Where(u => u.AreaInteresse.Contains(area));
             }
 
+            var totalCount = await query.CountAsync();
+
             var mentors = await query
+                .OrderBy(u => u.Name) 
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(u => new 
                 { 
                     u.Id, 
@@ -42,7 +48,15 @@ namespace Api.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(mentors);
+            var result = new PagedResult<object>
+            {
+                Items = mentors.Cast<object>().ToList(),
+                TotalCount = totalCount,
+                CurrentPage = page,
+                PageSize = pageSize
+            };
+
+            return Ok(result);
         }
 
         [HttpPost("request/{mentorId}")]

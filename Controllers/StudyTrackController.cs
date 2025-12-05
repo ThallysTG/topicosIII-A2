@@ -1,4 +1,5 @@
 using Api.Data;
+using Api.Dtos;
 using Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,16 +16,20 @@ namespace Api.Controllers
         private readonly ApplicationDbContext _context = context;
 
         [HttpGet]
-        public async Task<IActionResult> GetMyTracks()
+        public async Task<IActionResult> GetMyTracks([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userIdParam = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("id")?.Value;
             if (!int.TryParse(userIdParam, out int userId)) return Unauthorized();
 
-            var tracks = await _context.StudyTracks
+            var query = _context.StudyTracks
                 .Where(t => t.StudentUserId == userId)
-                .Include(t => t.StudyActivities.OrderBy(a => a.Order))
-                .Include(t => t.Institutions)
-                .OrderByDescending(t => t.Id)
+                .OrderByDescending(t => t.Id);
+
+            var totalCount = await query.CountAsync();
+
+            var tracks = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(t => new
                 {
                     t.Id,
@@ -33,8 +38,8 @@ namespace Api.Controllers
                     Source = t.Source.ToString(),
                     TotalActivities = t.StudyActivities.Count,
                     CompletedActivities = t.StudyActivities.Count(a => a.ActivityStatus == ActivityStatus.Concluida),
-
-                    Activities = t.StudyActivities.Select(a => new
+                    
+                    Activities = t.StudyActivities.OrderBy(a => a.Order).Select(a => new
                     {
                         a.Id,
                         a.Title,
@@ -53,7 +58,15 @@ namespace Api.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(tracks);
+            var result = new PagedResult<object>
+            {
+                Items = tracks.Cast<object>().ToList(),
+                TotalCount = totalCount,
+                CurrentPage = page,
+                PageSize = pageSize
+            };
+
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
