@@ -2,7 +2,7 @@
 @inject NavigationManager Nav
 @using EduMentorClient.Services
 @inject UserState UserState
-@inject IJSRuntime JS 
+@inject IJSRuntime JS
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -13,12 +13,13 @@
     {
         @if (_sidebarOpen)
         {
-            <div class="fixed inset-0 bg-gray-900/50 z-40 transition-opacity backdrop-blur-sm md:hidden" 
-                 @onclick="ToggleSidebar">
+            <div class="fixed inset-0 bg-gray-900/50 z-40 transition-opacity backdrop-blur-sm md:hidden"
+                @onclick="ToggleSidebar">
             </div>
         }
 
-        <aside class="@(_sidebarOpen ? "translate-x-0" : "-translate-x-full") w-64 fixed top-0 left-0 z-50 h-screen bg-white shadow-2xl transition-transform duration-300 ease-in-out overflow-y-auto overflow-x-hidden border-r border-gray-200">
+        <aside
+            class="@(_sidebarOpen ? "translate-x-0" : "-translate-x-full") w-64 fixed top-0 left-0 z-50 h-screen bg-white shadow-2xl transition-transform duration-300 ease-in-out overflow-y-auto overflow-x-hidden border-r border-gray-200">
             <div class="flex flex-col h-full">
 
                 <div class="h-16 flex items-center px-6 border-b border-gray-100 bg-white flex-shrink-0">
@@ -32,37 +33,52 @@
                     @if (UserState.Role == "Aluno")
                     {
                         <NavLink href="/" Match="NavLinkMatch.All"
-                                 class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
-                                 ActiveClass="bg-blue-100 text-[#0056D2]">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
+                            ActiveClass="bg-blue-100 text-[#0056D2]">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
                             Nova Trilha
                         </NavLink>
                         <NavLink href="/my-tracks"
-                                 class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
-                                 ActiveClass="bg-blue-100 text-[#0056D2]">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                            class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
+                            ActiveClass="bg-blue-100 text-[#0056D2]">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                </path>
+                            </svg>
                             Minhas Trilhas
                         </NavLink>
                         <NavLink href="/progress"
-                                 class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
-                                 ActiveClass="bg-blue-100 text-[#0056D2]">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                            class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
+                            ActiveClass="bg-blue-100 text-[#0056D2]">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
                             Progresso
                         </NavLink>
                         <NavLink href="/find-mentors"
-                                 class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
-                                 ActiveClass="bg-blue-100 text-[#0056D2]">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
+                            ActiveClass="bg-blue-100 text-[#0056D2]">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                </path>
+                            </svg>
                             Mentores
                         </NavLink>
                     }
                     else if (UserState.Role == "Mentor")
                     {
-                        <NavLink href="/mentor-dashboard" 
-                                 class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700" 
-                                 ActiveClass="bg-blue-100 text-[#0056D2]">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-3">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                        <NavLink href="/mentor-dashboard"
+                            class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
+                            ActiveClass="bg-blue-100 text-[#0056D2]">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-5 h-5 mr-3">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                             </svg>
                             Painel do Mentor
                         </NavLink>
@@ -70,15 +86,23 @@
                     else if (UserState.Role == "Admin")
                     {
                         <NavLink href="/admin/users"
-                                 class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
-                                 ActiveClass="bg-blue-100 text-[#0056D2]">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
+                            ActiveClass="bg-blue-100 text-[#0056D2]">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                </path>
+                            </svg>
                             Gestão de Usuários
                         </NavLink>
                         <NavLink href="admin/importar-inep"
-                                 class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
-                                 ActiveClass="bg-blue-100 text-[#0056D2]">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
+                            ActiveClass="bg-blue-100 text-[#0056D2]">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                </path>
+                            </svg>
                             Importar Dados INEP
                         </NavLink>
                     }
@@ -86,9 +110,13 @@
                     @if (UserState.Role != "Admin")
                     {
                         <NavLink href="/sessions"
-                                 class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
-                                 ActiveClass="bg-blue-100 text-[#0056D2]">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            class="flex items-center px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-50 hover:text-[#0056D2] transition duration-200 text-gray-700"
+                            ActiveClass="bg-blue-100 text-[#0056D2]">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
                             Sessões
                         </NavLink>
                     }
@@ -97,22 +125,27 @@
         </aside>
     }
 
-    <header class="@(UserState.IsLoggedIn && _sidebarOpen ? "md:ml-64" : "ml-0") bg-[#0056D2] text-white shadow-md z-10 flex-shrink-0 h-16 transition-all duration-300 ease-in-out">
+    <header
+        class="@(UserState.IsLoggedIn && _sidebarOpen ? "md:ml-64" : "ml-0") bg-[#0056D2] text-white shadow-md z-10 flex-shrink-0 h-16 transition-all duration-300 ease-in-out">
         <div class="flex items-center justify-between px-4 h-full">
 
             <div class="flex items-center gap-4">
                 @if (UserState.IsLoggedIn)
                 {
-                    <button @onclick="ToggleSidebar" class="p-2 rounded-lg hover:bg-[#00419E] focus:outline-none transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    <button @onclick="ToggleSidebar"
+                        class="p-2 rounded-lg hover:bg-[#00419E] focus:outline-none transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
                 }
 
                 @if (!UserState.IsLoggedIn || !_sidebarOpen)
                 {
-                    <div class="flex items-center gap-2 cursor-pointer animate-[fadeIn_0.3s]" @onclick='() => Nav.NavigateTo("/")'>
+                    <div class="flex items-center gap-2 cursor-pointer animate-[fadeIn_0.3s]"
+                        @onclick='() => Nav.NavigateTo("/")'>
                         <i class="fa-solid fa-graduation-cap text-xl"></i>
                         <span class="font-bold text-xl tracking-wide hidden sm:block">EduMentor AI</span>
                     </div>
@@ -127,34 +160,45 @@
                         <div class="fixed inset-0 z-20 cursor-default" @onclick="CloseUserMenu"></div>
                     }
 
-                    <div class="relative ml-3">
-                        <button @onclick="ToggleUserMenu"
-                                class="flex items-center max-w-xs bg-white rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0056D2] focus:ring-white transition">
-                            <div class="h-9 w-9 rounded-full flex items-center justify-center bg-white text-[#0056D2] font-bold text-lg border-2 border-transparent hover:border-blue-100">
-                                @(string.IsNullOrEmpty(UserState.UserName) ? "?" : UserState.UserName.Substring(0, 1).ToUpper())
+                <span class="hidden md:block text-sm font-medium animate-[fadeIn_0.5s]">
+                    Olá, <span class="font-bold">@UserState.UserName</span>!
+                </span>
+
+                <div class="relative ml-3">
+                    <button @onclick="ToggleUserMenu"
+                        class="flex items-center max-w-xs bg-white rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0056D2] focus:ring-white transition">
+                        <div
+                            class="h-9 w-9 rounded-full flex items-center justify-center bg-white text-[#0056D2] font-bold text-lg border-2 border-transparent hover:border-blue-100">
+                            @(string.IsNullOrEmpty(UserState.UserName) ? "?" : UserState.UserName.Substring(0,
+                                                        1).ToUpper())
                             </div>
                         </button>
 
                         @if (isUserMenuOpen)
                         {
-                            <div class="origin-top-right absolute right-0 mt-2 w-48 rounded-2xl shadow-xl p-2 bg-white ring-1 ring-black ring-opacity-5 z-30 animate-[fadeIn_0.2s]">
+                            <div
+                                class="origin-top-right absolute right-0 mt-2 w-48 rounded-2xl shadow-xl p-2 bg-white ring-1 ring-black ring-opacity-5 z-30 animate-[fadeIn_0.2s]">
                                 <div class="px-4 py-3 border-b border-gray-100 mb-1">
                                     <p class="text-sm font-bold text-[#0056D2] truncate">@UserState.UserName</p>
                                     <p class="text-xs text-gray-400 truncate font-medium">@UserState.Role</p>
                                 </div>
-                                
+
                                 <button @onclick="OpenProfileModal"
-                                        class="w-full text-left flex items-center justify-start gap-2 px-4 py-2 text-sm rounded-lg text-gray-700 hover:bg-blue-50 hover:text-[#0056D2] transition font-medium">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    class="w-full text-left flex items-center justify-start gap-2 px-4 py-2 text-sm rounded-lg text-gray-700 hover:bg-blue-50 hover:text-[#0056D2] transition font-medium">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                     Meu Perfil
                                 </button>
-                                
+
                                 <button @onclick="Logout"
-                                        class="w-full text-left flex items-center justify-start gap-2 px-4 py-2 text-sm rounded-lg text-red-600 hover:bg-red-50 transition font-medium mt-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    class="w-full text-left flex items-center justify-start gap-2 px-4 py-2 text-sm rounded-lg text-red-600 hover:bg-red-50 transition font-medium mt-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                     </svg>
                                     Sair
                                 </button>
@@ -164,7 +208,8 @@
                 }
                 else
                 {
-                    <NavLink href="/login" class="bg-white text-[#0056D2] hover:bg-gray-100 px-5 py-2 rounded-lg text-sm font-bold transition shadow-sm">
+                    <NavLink href="/login"
+                        class="bg-white text-[#0056D2] hover:bg-gray-100 px-5 py-2 rounded-lg text-sm font-bold transition shadow-sm">
                         Entrar
                     </NavLink>
                 }
@@ -172,13 +217,15 @@
         </div>
     </header>
 
-    <main class="@(UserState.IsLoggedIn && _sidebarOpen ? "md:ml-64" : "ml-0") flex-grow pt-4 transition-all duration-300 bg-[#F5F7FA]">
+    <main
+        class="@(UserState.IsLoggedIn && _sidebarOpen ? "md:ml-64" : "ml-0") flex-grow pt-4 transition-all duration-300 bg-[#F5F7FA]">
         <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             @Body
         </div>
     </main>
 
-    <footer class="@(UserState.IsLoggedIn && _sidebarOpen ? "md:ml-64" : "ml-0") mt-auto py-4 transition-all duration-300">
+    <footer
+        class="@(UserState.IsLoggedIn && _sidebarOpen ? "md:ml-64" : "ml-0") mt-auto py-4 transition-all duration-300">
         <div class="max-w-7xl space-y-2 mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-between items-center">
             <div class="text-gray-500 text-sm">&copy; 2025 <b>EduMentor AI</b> - Unitins/TO</div>
             <div class="text-gray-400 text-xs">Powered by Gemini & INEP</div>
@@ -208,7 +255,7 @@
     {
         if (_sidebarOpen)
         {
-            try 
+            try
             {
                 var isMobile = await JS.InvokeAsync<bool>("eval", "window.innerWidth < 768");
                 if (isMobile)
@@ -217,9 +264,9 @@
                     StateHasChanged();
                 }
             }
-            catch 
+            catch
             {
-               
+
             }
         }
     }
